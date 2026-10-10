@@ -26,6 +26,8 @@ AGENT_OUTPUT="$BUILD_DIR/hp_agent"
 FAKE_SHELL_OUTPUT="$BUILD_DIR/hp_fake_sh"
 HEALTHCHECK_OUTPUT="$BUILD_DIR/hp_healthcheck"
 
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev-build")
+
 die() { echo "error: $*" >&2; exit 1; }
 run() { echo ">> $*"; "$@"; }
 

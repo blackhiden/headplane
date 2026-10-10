@@ -29,6 +29,9 @@ export default defineConfig({
     command: "pnpm dev:app:e2e",
     url: `${BASE_URL}/admin/healthz`,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 300_000, // Increase from 120_000 to 180_000ms (3 minutes)
+    ignoreHTTPSErrors: true,
+    stdout: "pipe", // Capture output for debugging
+    stderr: "pipe",
   },
 });

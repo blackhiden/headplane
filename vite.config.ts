@@ -32,8 +32,12 @@ if (process.env.HEADPLANE_VERSION) {
       .replace(/^v/, "");
     VERSION = describe === tag ? tag : `${tag}-dev+${describe.split("-").pop()}`;
   } catch {
-    const pkg = await readFile("package.json", "utf-8");
-    VERSION = JSON.parse(pkg).version;
+    try {
+      const pkg = await readFile("package.json", "utf-8");
+      VERSION = JSON.parse(pkg).version;
+    } catch {
+      VERSION = "dev-build";
+    }
   }
 }
 
