@@ -35,6 +35,11 @@ These are some of the features that Headplane offers:
 
 ## Deployment
 
+Headplane can be deployed via Docker or as a native binary:
+
+- **Docker**: The recommended deployment method. See the [Docker installation guide](https://headplane.net).
+- **Native packages**: Download prebuilt `.deb`, `.tar.gz`, or `.zip` packages for `linux-amd64` and `linux-arm64` from the [releases page](https://github.com/tale/headplane/releases).
+
 Refer to the [website](https://headplane.net) for detailed installation instructions.
 Local administrator profile configuration is documented in
 [the configuration guide](./docs/configuration/index.md#local-administrator-profile).
