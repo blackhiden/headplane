@@ -36,7 +36,7 @@ the latest commit on the remote `main` branch.
 ## Repositories
 
 - Headplane: https://github.com/arsydoni4326-alt/headplane.git
-- Headscale: https://github.com/arsydoni4326-alt/headscale.git
+- Headscale: https://github.com/blackhiden/headscale.git
 
 ## Files
 
