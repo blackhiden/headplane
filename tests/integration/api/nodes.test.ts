@@ -38,7 +38,7 @@ function qrRegistrationPayload(authId: string, serverUrl: string, expiresAt: str
 }
 
 function actionContext(api: Awaited<ReturnType<typeof getRuntimeClient>>) {
-  const auth = { can: vi.fn(() => true) };
+  const auth = { can: vi.fn(() => true), canManageNode: vi.fn(() => true) };
   const liveStore = { refresh: vi.fn() };
   const audit = { record: vi.fn().mockResolvedValue(undefined), list: vi.fn() };
   const principal: Principal = {
@@ -111,15 +111,16 @@ describe.for(HS_VERSIONS)("Headscale %s: Users", { concurrent: false }, (version
       normalizeRegistrationKey(tailnetNode.authCode),
     );
 
-    await expect(
-      scanQRAction({
-        request: qrRegisterRequest(payload, user.name),
-        context,
-        params: {},
-      } as never),
-    ).rejects.toMatchObject({
+    const replayResponse = await scanQRAction({
+      request: qrRegisterRequest(payload, user.name),
+      context,
+      params: {},
+    } as never);
+
+    expect(replayResponse).toMatchObject({
       type: "DataWithResponseInit",
       init: { status: 500 },
+      data: { error: expect.stringContaining("") },
     });
 
     expect(register).toHaveBeenCalledTimes(2);
