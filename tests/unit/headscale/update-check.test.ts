@@ -70,7 +70,7 @@ describe("Headscale updateCheck", () => {
         updateAvailable: true,
         remote: {
           commit: "def5678",
-          url: "https://github.com/arsydoni4326-alt/headscale",
+          url: "https://github.com/blackhiden/headscale",
         },
       });
     });
