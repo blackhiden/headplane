@@ -23,11 +23,11 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch git history
-        run: git fetch --depth=0
-
       - name: Check out the repo
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -92,6 +92,7 @@ jobs:
         run: pnpm run test:e2e
         env:
           VITE_CONFIG_NATIVE_IGNORE_WARNING: true
+          VITE_OPTIMIZE_DEPS_BUILD_SYNC: true
 
       - name: Upload Playwright report
         if: failure()
