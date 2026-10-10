@@ -1,6 +1,6 @@
 {
   "name": "headplane",
-  "version": "0.8.18-arsydoni4326-alt",
+  "version": "1.0.7",
   "private": true,
   "type": "module",
   "sideEffects": false,

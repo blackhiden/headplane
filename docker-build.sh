@@ -16,7 +16,7 @@ fi
 # --- Step 1: Choose Environment ---
 # --- Step 2: Execute based on choice ---
 APP_VERSION="$(git rev-parse --short HEAD)"
-BASE_NAME="ghcr.io/arsydoni4326-alt/headplane"
+BASE_NAME="ghcr.io/blackhiden/headplane"
 echo -n "Enter you version: "
 read -r VERSION
 if [ ! -z $VERSION ]; then
