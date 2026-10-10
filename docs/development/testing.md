@@ -75,7 +75,7 @@ The a11y tests are part of the full e2e run and are wired into CI.
   `HEADPLANE_BUNDLE_TOTAL_BUDGET`.
 - **Lighthouse CI** — `pnpm run lighthouse:ci` measures the login page against
   performance, accessibility, best-practices, and SEO budgets
-  (`lighthouserc.js`). The budgets are initial values; tighten them after
+  (`lighthouserc.cjs`). The budgets are initial values; tighten them after
   capturing a baseline.
 - **WASM SSH payload** — `hp_ssh.wasm` is excluded from the client bundle and
   fetched at runtime only when the SSH page is opened.

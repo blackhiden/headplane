@@ -117,18 +117,35 @@ const partialHeadscaleConfig = type({
 
 const assignableRole = '"admin" | "network_admin" | "it_admin" | "auditor" | "viewer" | "member"';
 
+// Avatar can be either a full URL or a path starting with /
+const avatarType = type("string")
+  .narrow((s, ctx) => {
+    // Allow full URLs
+    try {
+      new URL(s);
+      return true;
+    } catch {
+      // Allow paths starting with /
+      if (s.startsWith("/")) {
+        return true;
+      }
+      return ctx.mustBe("a URL or a path starting with /");
+    }
+  })
+  .optional();
+
 const userConfig = type({
   username: "string",
   password: "string",
   name: "string?",
-  avatar: type("string.url").optional(),
+  avatar: avatarType,
 });
 
 const partialUserConfig = type({
   username: "string?",
   password: "string?",
   name: "string?",
-  avatar: type("string.url").optional(),
+  avatar: avatarType,
 });
 
 const oidcConfig = type({

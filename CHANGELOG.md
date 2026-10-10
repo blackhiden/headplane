@@ -178,7 +178,7 @@ This release merges upstream changes while preserving all local features includi
     server, wired into CI.
   - Added axe-core accessibility tests (`tests/e2e/a11y.spec.ts`) that fail on
     critical/serious violations across the main routes, wired into CI.
-  - Added Lighthouse CI (`lighthouserc.js`) with performance budgets for the
+  - Added Lighthouse CI (`lighthouserc.cjs`) with performance budgets for the
     login page, wired into CI.
   - Added a bundle-size analysis script (`scripts/analyze-bundle.mjs`) that
     gates on per-chunk and total JS budgets in CI.
