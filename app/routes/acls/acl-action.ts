@@ -52,7 +52,7 @@ export async function aclAction({ request, context }: Route.ActionArgs) {
   } catch (error) {
     if (isDataWithApiError(error)) {
       const rawData = error.data.rawData;
-      // https://github.com/juanfont/headscale/blob/c4600346f9c29b514dc9725ac103efb9d0381f23/hscontrol/types/policy.go#L11
+      // https://github.com/blackhiden/headscale/blob/c4600346f9c29b514dc9725ac103efb9d0381f23/hscontrol/types/policy.go#L11
       if (rawData.includes("update is disabled")) {
         throw data("Policy is not writable", { status: 403 });
       }
