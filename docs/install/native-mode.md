@@ -36,7 +36,75 @@ sudo mkdir -p /var/lib/headplane
 sudo chown -R $(whoami):$(whoami) /var/lib/headplane
 ```
 
-## Building Headplane
+## Installing from Prebuilt Packages
+
+Starting from recent releases, Headplane provides prebuilt packages for `linux-amd64` and `linux-arm64` architectures. These packages include both the backend binaries and frontend assets, eliminating the need to build from source.
+
+### Debian/Ubuntu (.deb)
+
+Download and install the `.deb` package for your architecture:
+
+```bash
+# Download the latest release (replace VERSION and ARCH as needed)
+VERSION="0.8.18"
+ARCH="amd64"  # or "arm64"
+wget "https://github.com/tale/headplane/releases/download/v${VERSION}/headplane-${VERSION}-linux-${ARCH}.deb"
+
+# Install the package
+sudo dpkg -i "headplane-${VERSION}-linux-${ARCH}.deb"
+
+# Install dependencies if needed
+sudo apt-get install -f
+```
+
+The `.deb` package includes:
+
+- A systemd service unit at `/lib/systemd/system/headplane.service`
+- An example configuration at `/etc/headplane/config.yaml.example`
+- Binaries installed to `/usr/bin/headplane` and `/usr/bin/hp_healthcheck`
+- Application files in `/usr/share/headplane`
+
+After installation:
+
+```bash
+# Copy and edit the configuration
+sudo cp /etc/headplane/config.yaml.example /etc/headplane/config.yaml
+sudo nano /etc/headplane/config.yaml
+
+# Start the service
+sudo systemctl start headplane
+sudo systemctl enable headplane
+```
+
+### Generic Linux (tar.gz or zip)
+
+For non-Debian systems or portable installations:
+
+```bash
+# Download the archive (replace VERSION and ARCH as needed)
+VERSION="0.8.18"
+ARCH="amd64"  # or "arm64"
+wget "https://github.com/tale/headplane/releases/download/v${VERSION}/headplane-${VERSION}-linux-${ARCH}.tar.gz"
+
+# Extract
+tar -xzf "headplane-${VERSION}-linux-${ARCH}.tar.gz"
+cd "headplane-${VERSION}-linux-${ARCH}"
+
+# Optional: Install system-wide
+sudo cp -r bin/* /usr/local/bin/
+sudo cp -r lib/* /usr/local/lib/
+sudo cp -r share/* /usr/local/share/
+
+# Or run from the extracted directory
+export PATH="$PWD/bin:$PATH"
+headplane
+```
+
+The archive includes a `README.md` with installation instructions. For systemd integration, refer to the [Example systemd Service](#example-systemd-service) section below.
+
+## Building Headplane from Source
+
+If prebuilt packages are not available for your platform or you need to customize the build, you can build Headplane from source.
 
 Clone the Headplane repository, install dependencies, and build the project:
 

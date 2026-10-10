@@ -292,7 +292,7 @@ export default function Page({
             }
 
             // TODO: Why is Headscale using email as the user ID here?
-            // https://github.com/juanfont/headscale/issues/2520
+            // https://github.com/blackhiden/headscale/issues/2520
             const user = users.find((user) => user.id === key.user?.id);
             if (!user) {
               return null;

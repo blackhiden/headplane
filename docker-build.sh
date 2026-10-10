@@ -14,10 +14,6 @@ if [[ "${1:-}" != "" ]]; then
 fi
 
 # --- Step 1: Choose Environment ---
-echo "Please select an option:"
-echo "1) Build from Source"
-read -r -p "Enter choice [1-2]: " choice
-
 # --- Step 2: Execute based on choice ---
 APP_VERSION="$(git rev-parse --short HEAD)"
 BASE_NAME="ghcr.io/arsydoni4326-alt/headplane"
@@ -26,36 +22,30 @@ read -r VERSION
 if [ ! -z $VERSION ]; then
   APP_VERSION=$VERSION
 fi
-case "$choice" in
-  1)
-    echo "--- Building from Source and Running ---"
-    # Get Version Information
-    IMAGE_NAME="${BASE_NAME}:${APP_VERSION}"
-    APP_COMMIT="$(git rev-parse --short HEAD)"
-    BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-    echo "Building with the following info:"
-    echo "  Version: ${APP_VERSION}"
-    echo "  Commit: ${APP_COMMIT}"
-    echo "  Build Date: ${BUILD_DATE}"
-    echo "  Image Name: ${IMAGE_NAME}"
-    echo "----------------------------------------"
+echo "--- Building from Source and Running ---"
+# Get Version Information
+IMAGE_NAME="${BASE_NAME}:${APP_VERSION}"
+APP_COMMIT="$(git rev-parse --short HEAD)"
+BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-    # Build and start the services with a local-only image tag
+echo "Building with the following info:"
+echo "  Version: ${APP_VERSION}"
+echo "  Commit: ${APP_COMMIT}"
+echo "  Build Date: ${BUILD_DATE}"
+echo "  Image Name: ${IMAGE_NAME}"
+echo "----------------------------------------"
 
-    echo "Building the Docker image..."
-    docker build \
-      -t ${IMAGE_NAME} \
-      --build-arg APP_COMMIT="${APP_COMMIT}" \
-      --build-arg APP_VERSION="${APP_VERSION}" \
-      --build-arg BUILD_DATE="${BUILD_DATE}" .
-    docker tag ${IMAGE_NAME} "${BASE_NAME}:latest"
-    echo "Starting the services..."
-    echo "Build complete. Services are starting."
-    echo "Run 'docker compose logs -f' to see the logs."
-    ;;
-  *)
-    echo "Invalid choice. Please enter 1 or 2."
-    exit 1
-    ;;
-esac
+# Build and start the services with a local-only image tag
+
+echo "Building the Docker image..."
+docker build \
+  -t ${IMAGE_NAME} \
+  --build-arg APP_COMMIT="${APP_COMMIT}" \
+  --build-arg APP_VERSION="${APP_VERSION}" \
+  --build-arg BUILD_DATE="${BUILD_DATE}" .
+docker tag ${IMAGE_NAME} "${BASE_NAME}:latest"
+echo "Starting the services..."
+echo "Build complete. Services are starting."
+echo "Run 'docker compose logs -f' to see the logs."
+;;

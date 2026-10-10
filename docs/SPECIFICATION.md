@@ -114,7 +114,7 @@ functionality of the official Tailscale admin console.
 - **FR-10.1**: The UI checks for updates on every page load (and on demand via
   a "Check for Updates" button) by comparing the Docker build commit hash
   (`__COMMIT_HASH__`) against the latest commit on the remote `main` branch of
-  both [headplane](https://github.com/arsydoni4326-alt/headplane) and
+  both [headplane](https://github.com/blackhiden/headplane) and
   [headscale](https://github.com/blackhiden/headscale) repositories.
 - **FR-10.2**: If an update is available, a modal is shown with details
   (current vs. remote commit, links to compare changes and releases).

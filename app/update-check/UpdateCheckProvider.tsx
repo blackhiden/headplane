@@ -17,8 +17,8 @@ interface UpdateCheckContextValue extends UpdateCheckState {
 
 const UpdateCheckContext = createContext<UpdateCheckContextValue | null>(null);
 
-const HEADPLANE_REPO = "https://github.com/arsydoni4326-alt/headplane.git";
-const HEADSCALE_REPO = "https://github.com/arsydoni4326-alt/headscale.git";
+const HEADPLANE_REPO = "https://github.com/blackhiden/headplane.git";
+const HEADSCALE_REPO = "https://github.com/blackhiden/headscale.git";
 
 // --- sessionStorage caching ---
 
