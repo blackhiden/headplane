@@ -67,7 +67,19 @@ if (!VERSION) {
 
 // Load the config without any environment variables (not needed here)
 const configPath = process.env.HEADPLANE_CONFIG_PATH || "config.example.yaml";
-const config = await readFile(configPath, "utf-8");
+let config: string;
+try {
+  config = await readFile(configPath, "utf-8");
+} catch (err) {
+  // If the e2e config doesn't exist yet (global setup hasn't run),
+  // fall back to the example config
+  if (configPath !== "config.example.yaml") {
+    console.warn(`Config file ${configPath} not found, falling back to config.example.yaml`);
+    config = await readFile("config.example.yaml", "utf-8");
+  } else {
+    throw err;
+  }
+}
 const { server } = parse(config);
 
 export default defineConfig(({ command }) => {
