@@ -66,7 +66,8 @@ if (!VERSION) {
 }
 
 // Load the config without any environment variables (not needed here)
-const config = await readFile("config.example.yaml", "utf-8");
+const configPath = process.env.HEADPLANE_CONFIG_PATH || "config.example.yaml";
+const config = await readFile(configPath, "utf-8");
 const { server } = parse(config);
 
 export default defineConfig(({ command }) => {
