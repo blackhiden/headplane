@@ -14,7 +14,7 @@ export async function readE2EState(): Promise<E2EState> {
 }
 
 export const test = base.extend<{ apiKey: string; authedPage: Page }>({
-  apiKey: async (_fixtures, use) => {
+  apiKey: async ({}, use) => {
     const state = await readE2EState();
     await use(state.apiKey);
   },

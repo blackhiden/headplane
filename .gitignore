@@ -28,3 +28,4 @@ session.md
 /playwright-report/
 /blob-report/
 *.md
+!/SPECIFICATION.md

@@ -27,7 +27,9 @@ export default defineConfig({
   ],
   webServer: {
     command: "pnpm dev:app:e2e",
-    url: `${BASE_URL}/admin/healthz`,
+    // Playwright starts the web server before globalSetup creates Headscale.
+    // Probe Vite directly so readiness does not initialize Headplane too early.
+    url: `${BASE_URL}/@vite/client`,
     reuseExistingServer: !process.env.CI,
     timeout: 600000,
     ignoreHTTPSErrors: true,

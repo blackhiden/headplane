@@ -114,6 +114,14 @@ jobs:
             extra_records: []
           EOF
 
+      - name: Show e2e config templates
+        run: |
+          for config in tests/e2e/.headplane-e2e.yaml tests/e2e/.headscale-e2e.yaml; do
+            echo "::group::$config"
+            sed -E 's/^([[:space:]]*(cookie_secret|api_key):).*/\1 "[REDACTED]"/' "$config"
+            echo "::endgroup::"
+          done
+
       - name: Run e2e tests
         run: pnpm run test:e2e
         env:

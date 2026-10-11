@@ -2,6 +2,8 @@
 
 ## Fixes
 
+- Fixed GitHub Actions E2E tests timing out before setup by waiting for Vite to
+  listen instead of waiting for Headscale-dependent application health.
 - Fixed QR scanner startup leaving the camera frame blank and closing it before
   startup completed crashing the page with a scanner-stop error.
 - Fixed QR registration requests bypassing Headplane's configured URL prefix

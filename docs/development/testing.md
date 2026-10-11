@@ -45,10 +45,14 @@ pnpm run test:e2e
 
 The suite:
 
-1. Starts a real Headscale container (`tests/e2e/global-setup.ts`) and creates
-   an API key.
-2. Writes a throwaway Headplane config pointing at that container.
-3. Boots the dev server (`pnpm dev:app:e2e`) via Playwright's `webServer`.
+1. In CI, writes bootstrap Headplane and Headscale configuration templates before
+   invoking Playwright; the workflow prints them with sensitive values redacted.
+2. Boots the dev server (`pnpm dev:app:e2e`) via Playwright's `webServer`, using
+   Vite's `/@vite/client` endpoint as its readiness probe. This confirms Vite is
+   listening without initializing Headplane before test setup is ready.
+3. Starts a real Headscale container (`tests/e2e/global-setup.ts`), creates an
+   API key, and replaces the bootstrap Headplane config with one that points at
+   that container.
 4. Drives the UI in Chromium.
 
 Install the browser once with `pnpm run test:e2e:install`. The suite requires
