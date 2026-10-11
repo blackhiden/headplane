@@ -88,7 +88,7 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Create e2e config template
+      - name: Create e2e config templates
         run: |
           mkdir -p tests/e2e
           cat > tests/e2e/.headplane-e2e.yaml << 'EOF'
@@ -102,6 +102,16 @@ jobs:
           headscale:
             url: "http://localhost:8080"
             config_path: "./tests/e2e/.headscale-e2e.yaml"
+          EOF
+          cat > tests/e2e/.headscale-e2e.yaml << 'EOF'
+          dns:
+            magic_dns: true
+            base_domain: example.com
+            nameservers:
+              global:
+                - 1.1.1.1
+            search_domains: []
+            extra_records: []
           EOF
 
       - name: Run e2e tests
