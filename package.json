@@ -8,7 +8,7 @@
     "preinstall": "npx only-allow pnpm",
     "build": "react-router build",
     "dev:app": "HEADPLANE_CONFIG_PATH=./config.example.yaml react-router dev | pino-pretty -c",
-    "dev:app:e2e": "HEADPLANE_CONFIG_PATH=./tests/e2e/.headplane-e2e.yaml react-router dev | pino-pretty -c",
+    "dev:app:e2e": "PORT=3100 HEADPLANE_CONFIG_PATH=./tests/e2e/.headplane-e2e.yaml react-router dev | pino-pretty -c",
     "dev:docker": "docker compose up",
     "dev": "pnpm run --stream /^dev:/",
     "start": "node build/server/index.js",
