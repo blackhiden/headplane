@@ -53,7 +53,8 @@ The suite:
 3. Starts a real Headscale container (`tests/e2e/global-setup.ts`), creates an
    API key, and replaces the bootstrap Headplane config with one that points at
    that container.
-4. Drives the UI in Chromium.
+4. Drives the UI in Chromium. Authenticated fixtures select the API Key login
+   tab before entering the generated Headscale API key.
 
 Install the browser once with `pnpm run test:e2e:install`. The suite requires
 Docker and runs with a single worker (the container and server are shared).

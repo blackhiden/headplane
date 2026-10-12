@@ -2,6 +2,8 @@
 
 ## Fixes
 
+- Fixed the Playwright authenticated-page fixture timing out on the password
+  login form by selecting the API Key tab before entering its generated key.
 - Fixed GitHub Actions E2E tests timing out before setup by waiting for Vite to
   listen instead of waiting for Headscale-dependent application health.
 - Fixed QR scanner startup leaving the camera frame blank and closing it before

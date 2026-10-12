@@ -20,6 +20,7 @@ export const test = base.extend<{ apiKey: string; authedPage: Page }>({
   },
   authedPage: async ({ page, apiKey }, use) => {
     await page.goto("/admin/login");
+    await page.getByRole("button", { name: "API Key" }).click();
     await page.getByPlaceholder("API Key").fill(apiKey);
     await page.getByRole("button", { name: "Sign In" }).click();
     await expect(page).toHaveURL(/\/machines/);
