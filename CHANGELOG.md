@@ -1,7 +1,13 @@
-# Next
+# 1.0.8 (October 12, 2026)
 
 ## Fixes
 
+- Fixed the login page's password visibility toggle (Show/Hide button) not
+  changing the password input type between masked and visible text.
+- Fixed the login page's API Key and Password tabs ignoring clicks made while
+  the server-rendered page was still hydrating.
+- Fixed E2E setup to reuse its Docker-created Headscale API key and state rather
+  than starting a second Headscale container through Testcontainers.
 - Improved accessibility across the dashboard by naming icon-only menus and
   select controls, and by increasing shared link and footer text contrast to
   meet WCAG AA requirements.

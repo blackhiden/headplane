@@ -80,10 +80,15 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
   const { isCookieSecureEnabled, isOidcConnectorEnabled, oidcErrorCodes, urlState } = loaderData;
 
   const [showCookieWarning, setShowCookieWarning] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [loginMethod, setLoginMethod] = useState<"api_key" | "password">("password");
   const [showPassword, setShowPassword] = useState(false);
   const [params] = useSearchParams();
   const { pause } = useLiveData();
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     // This page does NOT need stale while revalidate logic
@@ -153,6 +158,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
           <div className="mb-4 flex gap-2">
             <Button
               type="button"
+              disabled={!isHydrated}
               variant={loginMethod === "password" ? "heavy" : "light"}
               onClick={() => setLoginMethod("password")}
               className="flex-1"
@@ -161,6 +167,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
             </Button>
             <Button
               type="button"
+              disabled={!isHydrated}
               variant={loginMethod === "api_key" ? "heavy" : "light"}
               onClick={() => setLoginMethod("api_key")}
               className="flex-1"
@@ -195,8 +202,9 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                    disabled={!isHydrated}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-600 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-50 dark:text-gray-400 dark:hover:text-gray-100"
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>

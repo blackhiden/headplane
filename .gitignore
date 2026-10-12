@@ -21,6 +21,7 @@ session.md
 /tests/e2e/.e2e-state.json
 /tests/e2e/.headplane-e2e.yaml
 /tests/e2e/.headscale-e2e.yaml
+/tests/e2e/.headscale-container-config.yaml
 /tests/e2e/data/
 
 # Playwright test artifacts

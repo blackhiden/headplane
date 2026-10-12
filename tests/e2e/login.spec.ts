@@ -23,14 +23,34 @@ test.describe("login", () => {
     await expect(page.getByPlaceholder("API Key")).not.toBeVisible();
   });
 
+  test("keeps login controls disabled until hydration", async ({ baseURL, browser }) => {
+    if (!baseURL) {
+      throw new Error("Playwright baseURL is required for the server-rendering assertion");
+    }
+
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+
+    try {
+      await page.goto(new URL("/admin/login", baseURL).href);
+      await expect(page.getByRole("button", { name: "Password" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "API Key" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Show", exact: true })).toBeDisabled();
+    } finally {
+      await context.close();
+    }
+  });
+
   test("toggles between password and API key login", async ({ page }) => {
     await page.goto("/admin/login");
 
     // Password is default
     await expect(page.getByPlaceholder("Password")).toBeVisible();
 
-    // Switch to API Key
-    await page.getByRole("button", { name: "API Key" }).click();
+    // Switch to API Key. Playwright waits for hydration to enable this control.
+    const apiKeyTab = page.getByRole("button", { name: "API Key" });
+    await expect(apiKeyTab).toBeEnabled();
+    await apiKeyTab.click();
     await expect(page.getByPlaceholder("API Key")).toBeVisible();
     await expect(page.getByPlaceholder("Password")).not.toBeVisible();
 
@@ -42,18 +62,17 @@ test.describe("login", () => {
 
   test("shows/hides password when toggle is clicked", async ({ page }) => {
     await page.goto("/admin/login");
-    const passwordInput = page.getByPlaceholder("Password");
+    const visibilityToggle = page.getByRole("button", { name: "Show", exact: true });
 
     // Initially hidden
-    await expect(passwordInput).toHaveAttribute("type", "password");
+    await expect(page.getByPlaceholder("Password")).toHaveAttribute("type", "password");
 
-    // Click show
-    await page.getByRole("button", { name: "Show" }).click();
-    await expect(passwordInput).toHaveAttribute("type", "text");
+    await expect(visibilityToggle).toBeEnabled();
+    await visibilityToggle.click();
+    await expect(page.getByPlaceholder("Password")).toHaveAttribute("type", "text");
 
-    // Click hide
-    await page.getByRole("button", { name: "Hide" }).click();
-    await expect(passwordInput).toHaveAttribute("type", "password");
+    await page.getByRole("button", { name: "Hide", exact: true }).click();
+    await expect(page.getByPlaceholder("Password")).toHaveAttribute("type", "password");
   });
 
   test("password-only mode works when local admin is configured", async ({ page }) => {
