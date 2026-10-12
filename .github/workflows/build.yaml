@@ -88,45 +88,29 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Create e2e config templates
-        run: |
-          mkdir -p tests/e2e
-          cat > tests/e2e/.headplane-e2e.yaml << 'EOF'
-          server:
-            host: "127.0.0.1"
-            port: 3100
-            base_url: "http://127.0.0.1:3100"
-            data_path: "./tests/e2e/data"
-            cookie_secret: "0123456789abcdef0123456789abcdef"
-            cookie_secure: false
-          headscale:
-            url: "http://localhost:8080"
-            config_path: "./tests/e2e/.headscale-e2e.yaml"
-          EOF
-          cat > tests/e2e/.headscale-e2e.yaml << 'EOF'
-          dns:
-            magic_dns: true
-            base_domain: example.com
-            nameservers:
-              global:
-                - 1.1.1.1
-            search_domains: []
-            extra_records: []
-          EOF
+      - name: Setup E2E environment
+        run: node --import tsx scripts/setup-e2e.ts
 
-      - name: Show e2e config templates
+      - name: Show e2e config
         run: |
           for config in tests/e2e/.headplane-e2e.yaml tests/e2e/.headscale-e2e.yaml; do
             echo "::group::$config"
             sed -E 's/^([[:space:]]*(cookie_secret|api_key):).*/\1 "[REDACTED]"/' "$config"
             echo "::endgroup::"
           done
+          echo "::group::tests/e2e/.e2e-state.json"
+          sed -E 's/"apiKey": ".*"/"apiKey": "[REDACTED]"/' tests/e2e/.e2e-state.json
+          echo "::endgroup::"
 
       - name: Run e2e tests
         run: pnpm run test:e2e
         env:
           VITE_CONFIG_NATIVE_IGNORE_WARNING: true
           VITE_OPTIMIZE_DEPS_BUILD_SYNC: true
+
+      - name: Cleanup E2E environment
+        if: always()
+        run: docker rm -f headscale-e2e || true
 
       - name: Upload Playwright report
         if: failure()

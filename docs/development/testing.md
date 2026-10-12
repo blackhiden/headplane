@@ -45,16 +45,18 @@ pnpm run test:e2e
 
 The suite:
 
-1. In CI, writes bootstrap Headplane and Headscale configuration templates before
-   invoking Playwright; the workflow prints them with sensitive values redacted.
+1. In CI, runs `scripts/setup-e2e.ts` before Playwright. The script starts the
+   Docker Headscale environment, creates an API key, and writes the Headplane,
+   Headscale, and E2E state files; the workflow prints them with secrets redacted.
 2. Boots the dev server (`pnpm dev:app:e2e`) via Playwright's `webServer`, using
    Vite's `/@vite/client` endpoint as its readiness probe. This confirms Vite is
    listening without initializing Headplane before test setup is ready.
-3. Starts a real Headscale container (`tests/e2e/global-setup.ts`), creates an
-   API key, and replaces the bootstrap Headplane config with one that points at
-   that container.
-4. Drives the UI in Chromium. Authenticated fixtures select the API Key login
-   tab before entering the generated Headscale API key.
+3. Reuses the prepared Docker environment in `tests/e2e/global-setup.ts`. When
+   no prepared state exists, such as a normal local run, global setup instead
+   starts a real Headscale Testcontainer and writes the same runtime files.
+4. Drives the UI in Chromium. Login-method and password-visibility controls are
+   disabled until React hydrates, so Playwright waits for the API Key tab or Show
+   button to become enabled before clicking it.
 
 Install the browser once with `pnpm run test:e2e:install`. The suite requires
 Docker and runs with a single worker (the container and server are shared).

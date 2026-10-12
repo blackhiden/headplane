@@ -20,7 +20,8 @@ export async function startHeadscale(
   version: string,
   options?: HeadscaleOptions,
 ): Promise<HeadscaleEnv> {
-  let builder = new tc.GenericContainer(`headscale/headscale:${version}`)
+  // let builder = new tc.GenericContainer(`ghcr.io/blackhiden/headscale:${version}`)
+  let builder = new tc.GenericContainer(`ghcr.io/blackhiden/headscale:latest`)
     .withExposedPorts(8080)
     .withWaitStrategy(
       tc.Wait.forHttp("/health", 8080).withStartupTimeout(30_000).forStatusCode(200),
