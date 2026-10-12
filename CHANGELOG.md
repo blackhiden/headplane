@@ -1,4 +1,4 @@
-# Next
+# 1.0.8 (October 12, 2026)
 
 ## Fixes
 
