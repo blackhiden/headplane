@@ -40,7 +40,7 @@ export default function Footer({ isDebug, baseUrl }: FooterProps) {
               Debug
             </span>
           )}
-          <p className="text-mist-500 dark:text-mist-400">
+          <p className="text-mist-600 dark:text-mist-400">
             {__VERSION__} &middot;{" "}
             {urlVisible ? (
               <code>{baseUrl}</code>

@@ -135,7 +135,7 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
         </div>
         <div className="ml-auto grid shrink-0 grid-cols-2 gap-x-4">
           <Menu>
-            <MenuTrigger className="size-8 rounded-full p-1">
+            <MenuTrigger aria-label="Help links" className="size-8 rounded-full p-1">
               <CircleQuestionMark className="w-5" />
             </MenuTrigger>
             <MenuContent align="end">

@@ -97,7 +97,10 @@ export default function MachineRow({
         <div className="flex items-center gap-x-1">
           {node.ipAddresses[0]}
           <Menu>
-            <MenuTrigger className="rounded-full bg-transparent p-1 hover:bg-mist-100 dark:hover:bg-mist-800">
+            <MenuTrigger
+              aria-label={`Copy addresses for ${node.givenName}`}
+              className="rounded-full bg-transparent p-1 hover:bg-mist-100 dark:hover:bg-mist-800"
+            >
               <ChevronDown className="h-4 w-4" />
             </MenuTrigger>
             <MenuContent align="end">

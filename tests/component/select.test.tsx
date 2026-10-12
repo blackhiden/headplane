@@ -18,6 +18,7 @@ describe("Select", () => {
     );
 
     expect(screen.getByRole("combobox")).toHaveValue("Member");
+    expect(screen.getByRole("button", { name: "Show Role options" })).toBeInTheDocument();
   });
 
   test("reports the selected item value", async () => {

@@ -43,6 +43,7 @@ export default function Select({
     value !== undefined ? (items.find((i) => i.value === value) ?? null) : undefined;
   const defaultSelectedItem =
     defaultValue !== undefined ? (items.find((i) => i.value === defaultValue) ?? null) : undefined;
+  const accessibleLabel = props["aria-label"] ?? label ?? placeholder ?? "Select an option";
 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
@@ -77,6 +78,7 @@ export default function Select({
             data-1p-ignore
           />
           <Combobox.Trigger
+            aria-label={`Show ${accessibleLabel} options`}
             className={cn(
               "absolute inset-y-0 right-0 flex items-center pr-3",
               "text-mist-400 dark:text-mist-500",
