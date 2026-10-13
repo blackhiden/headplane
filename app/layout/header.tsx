@@ -156,6 +156,23 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
               </MenuItem>
             </MenuContent>
           </Menu>
+          {/* 
+            CRITICAL: User avatar in menu button - DO NOT REMOVE
+            
+            This UserAvatar component renders the configured user.avatar image
+            in the user menu trigger button. This is a required feature per:
+            - FR-1.5 in docs/SPECIFICATION.md (local admin avatar configuration)
+            - docs/configuration/index.md (user.avatar field documentation)
+            - CHANGELOG.md (v1.0.8: local admin avatar feature)
+            
+            The avatar displays when user.picture is set and loads successfully,
+            with automatic fallback to the default CircleUser icon when unset
+            or failed. This behavior is validated by component tests in
+            tests/component/user-avatar.test.tsx.
+            
+            If this is removed during upstream merge, the user menu will lose
+            the avatar display, breaking the documented functionality.
+          */}
           <Menu>
             <MenuTrigger
               aria-label={`${user.name} menu`}
@@ -246,6 +263,22 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
   );
 }
 
+/**
+ * UserAvatar renders the user's configured avatar image with fallback.
+ *
+ * CRITICAL: DO NOT REMOVE - Required for FR-1.5 (docs/SPECIFICATION.md)
+ *
+ * This component displays the optional user.avatar image configured for local
+ * administrators at /admin/admin/users (see docs/configuration/index.md).
+ * When the image loads successfully, it displays as a circular avatar.
+ * When unset or failed to load, it falls back to the default CircleUser icon.
+ *
+ * The avatar is rendered in the header's user menu button (line ~164 above).
+ * Component behavior is validated by tests/component/user-avatar.test.tsx.
+ *
+ * @param name - User's display name for accessibility (alt text)
+ * @param picture - Optional HTTPS URL or path to avatar image
+ */
 export function UserAvatar({ name, picture }: Pick<HeaderProps["user"], "name" | "picture">) {
   const [imageFailed, setImageFailed] = useState(false);
 

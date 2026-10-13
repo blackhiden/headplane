@@ -348,7 +348,7 @@ jobs:
         with:
           name: headplane-${{ matrix.arch }}
           path: dist/*
-          retention-days: 1
+          retention-days: 3
 
   release:
     name: GitHub Release
@@ -368,7 +368,9 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: headplane-*
           path: artifacts
+          merge-multiple: true
 
       - name: Organize artifacts
         run: |
