@@ -61,6 +61,47 @@ The suite:
 Install the browser once with `pnpm run test:e2e:install`. The suite requires
 Docker and runs with a single worker (the container and server are shared).
 
+### Manual E2E Environment Setup and Verification
+
+For local debugging or when troubleshooting the E2E environment, you can manually
+run the setup script and verify the test infrastructure. This is normally handled
+automatically by the test runner and CI, but running it manually is useful for
+inspecting the generated configuration files or diagnosing failures.
+
+Prerequisites: Docker, Node.js, `jq` (for JSON parsing).
+
+```bash
+# Clean up any existing test artifacts
+rm -rf tests/e2e/.e2e-state.json tests/e2e/.headplane-e2e.yaml tests/e2e/.headscale-e2e.yaml
+docker rm -f headscale-e2e 2>/dev/null || true
+
+# Run the setup script
+node --import tsx scripts/setup-e2e.ts
+
+# Verify outputs
+echo "=== Checking generated files ==="
+ls -lh tests/e2e/.e2e-state.json tests/e2e/.headplane-e2e.yaml tests/e2e/.headscale-e2e.yaml
+
+echo ""
+echo "=== API Key (first 20 chars) ==="
+cat tests/e2e/.e2e-state.json | jq -r '.apiKey' | cut -c1-20
+
+echo ""
+echo "=== Container status ==="
+docker ps | grep headscale-e2e
+
+echo ""
+echo "=== Headscale health check ==="
+curl -f http://localhost:8080/health && echo "✓ Healthy" || echo "✗ Failed"
+```
+
+The setup script creates:
+
+- `tests/e2e/.e2e-state.json` — API key and connection details
+- `tests/e2e/.headplane-e2e.yaml` — Headplane test configuration
+- `tests/e2e/.headscale-e2e.yaml` — Headscale test configuration
+- `headscale-e2e` Docker container running on port 8080
+
 ## Accessibility tests (axe-core)
 
 `tests/e2e/a11y.spec.ts` scans the main routes with axe-core and fails on any
