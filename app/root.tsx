@@ -13,7 +13,7 @@ import { LiveDataProvider } from "~/utils/live-data";
 import ToastProvider from "~/utils/toast-provider";
 
 import type { Route } from "./+types/root";
-import { ErrorBanner } from "./components/error-banner";
+import ErrorPage from "./layout/error-page";
 import { PluginProvider } from "./plugins";
 import { headscaleContext } from "./server/context";
 import { UpdateCheckModal, UpdateCheckProvider } from "./update-check";
@@ -116,11 +116,7 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  return (
-    <div className="flex h-screen w-screen items-center justify-center p-4">
-      <ErrorBanner className="max-w-2xl" error={error} />
-    </div>
-  );
+  return <ErrorPage error={error} />;
 }
 
 export default function App() {

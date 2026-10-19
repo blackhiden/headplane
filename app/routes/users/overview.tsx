@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 
+import Callout from "~/components/callout";
 import EmptyState from "~/components/empty-state";
+import Link from "~/components/link";
 import PageError from "~/components/page-error";
+import PageHeader from "~/components/page-header";
 import {
   appConfigContext,
   authContext,
@@ -22,7 +25,7 @@ import { getUserDisplayName } from "~/utils/user";
 import type { Route } from "./+types/overview";
 import HeadplaneUserRow from "./components/headplane-user-row";
 import HeadscaleUserRow from "./components/headscale-user-row";
-import ManageBanner from "./components/manage-banner";
+import CreateUser from "./dialogs/create-user";
 import { userAction } from "./user-actions";
 
 export interface HeadplaneUserData {
@@ -192,20 +195,35 @@ export const action = userAction;
 export default function Page({ loaderData }: Route.ComponentProps) {
   return (
     <>
-      <h1 className="mb-1.5 text-2xl font-medium">Users</h1>
-      <p className="text-md mb-8">Manage the users in your network and their permissions.</p>
-      <ManageBanner isDisabled={!loaderData.writable} oidc={loaderData.oidc} />
+      <PageHeader
+        actions={
+          <CreateUser isDisabled={!loaderData.writable} isOidc={loaderData.oidc !== undefined} />
+        }
+        description={
+          loaderData.oidc ? (
+            <>
+              People who can sign in to Headplane, managed through your{" "}
+              <Link external styled to={loaderData.oidc.issuer}>
+                OIDC provider
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              People in your tailnet, managed locally.{" "}
+              <Link external styled to="https://headscale.net/stable/ref/oidc">
+                Set up OIDC
+              </Link>
+            </>
+          )
+        }
+        title="Users"
+      />
 
       {loaderData.apiError && (
-        <div
-          className={cn(
-            "mb-6 flex items-start gap-3 rounded-lg border p-4",
-            "border-red-200 bg-red-50 text-red-800",
-            "dark:border-red-800 dark:bg-red-950 dark:text-red-200",
-          )}
-        >
-          <p className="text-sm">{loaderData.apiError}</p>
-        </div>
+        <Callout className="mb-6" variant="error">
+          {loaderData.apiError}
+        </Callout>
       )}
 
       <section>
