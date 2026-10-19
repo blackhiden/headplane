@@ -1,3 +1,14 @@
+# 1.0.10 (October 19, 2026)
+
+## Changes
+
+- Synchronized with upstream Headscale main branch (commit b19c638), incorporating latest upstream improvements while preserving all local features
+- Accepted upstream infrastructure updates: GitHub Actions workflows, Dockerfile, build configurations
+- Accepted upstream component improvements: action-dialog, avatar, callout, field, filter-dropdown, list, logo-mark, page-header, section, table
+- Accepted upstream agent integration tests and fault tolerance improvements
+- Preserved all local features: CODE_GRAPH.md documentation, navigation tabs (/routes, /topology, /derp, /instances, /audit, /admin), local UI components (empty-state, error-banner, loading-spinner, qr-scanner, table-list), and local design system
+- Maintained backward compatibility with existing local configuration and deployment patterns
+
 # 1.0.8 (October 12, 2026)
 
 ## Fixes
