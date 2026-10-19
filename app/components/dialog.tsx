@@ -1,4 +1,4 @@
-import { AlertDialog } from "@base-ui/react/alert-dialog";
+import { AlertDialog as BaseAlertDialog } from "@base-ui/react/alert-dialog";
 import React, { cloneElement, useEffect, useRef } from "react";
 import { Form, type HTMLFormMethod } from "react-router";
 
@@ -11,35 +11,62 @@ export interface DialogProps {
     | [React.ReactElement<ButtonProps>, React.ReactElement<DialogPanelProps>]
     | React.ReactElement<DialogPanelProps>;
   isOpen?: boolean;
+  open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  onOpenChangeComplete?: (isOpen: boolean) => void;
+  trigger?: React.ReactElement;
 }
 
 function Dialog(props: DialogProps) {
   const { pause, resume } = useLiveData();
-  const { isOpen, onOpenChange } = props;
+  const { isOpen, open, onOpenChange, onOpenChangeComplete, trigger } = props;
+  const actualOpen = open ?? isOpen;
 
   useEffect(() => {
-    if (isOpen) {
+    if (actualOpen) {
       pause();
     } else {
       resume();
     }
-  }, [isOpen]);
+  }, [actualOpen]);
+
+  if (trigger) {
+    return (
+      <BaseAlertDialog.Root
+        open={actualOpen}
+        onOpenChange={(newOpen) => onOpenChange?.(newOpen)}
+        onOpenChangeComplete={(newOpen) => onOpenChangeComplete?.(newOpen)}
+      >
+        <BaseAlertDialog.Trigger render={cloneElement(trigger)} />
+        <DialogOverlay>
+          {Array.isArray(props.children) ? props.children[1] : props.children}
+        </DialogOverlay>
+      </BaseAlertDialog.Root>
+    );
+  }
 
   if (Array.isArray(props.children)) {
     const [button, panel] = props.children;
     return (
-      <AlertDialog.Root open={isOpen} onOpenChange={(open) => onOpenChange?.(open)}>
-        <AlertDialog.Trigger render={cloneElement(button)} />
+      <BaseAlertDialog.Root
+        open={actualOpen}
+        onOpenChange={(newOpen) => onOpenChange?.(newOpen)}
+        onOpenChangeComplete={(newOpen) => onOpenChangeComplete?.(newOpen)}
+      >
+        <BaseAlertDialog.Trigger render={cloneElement(button)} />
         <DialogOverlay>{panel}</DialogOverlay>
-      </AlertDialog.Root>
+      </BaseAlertDialog.Root>
     );
   }
 
   return (
-    <AlertDialog.Root open={isOpen} onOpenChange={(open) => onOpenChange?.(open)}>
+    <BaseAlertDialog.Root
+      open={actualOpen}
+      onOpenChange={(newOpen) => onOpenChange?.(newOpen)}
+      onOpenChangeComplete={(newOpen) => onOpenChangeComplete?.(newOpen)}
+    >
       <DialogOverlay>{props.children}</DialogOverlay>
-    </AlertDialog.Root>
+    </BaseAlertDialog.Root>
   );
 }
 
@@ -111,8 +138,8 @@ function Panel(props: DialogPanelProps) {
 
 function DialogOverlay({ children }: { children: React.ReactNode }) {
   return (
-    <AlertDialog.Portal>
-      <AlertDialog.Backdrop
+    <BaseAlertDialog.Portal>
+      <BaseAlertDialog.Backdrop
         className={cn(
           "fixed inset-0 z-20 h-screen w-screen",
           "bg-mist-900/30 dark:bg-mist-950/60",
@@ -127,9 +154,51 @@ function DialogOverlay({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-    </AlertDialog.Portal>
+    </BaseAlertDialog.Portal>
   );
 }
 
+// Dialog Title component
+export function DialogTitle({ children, ...props }: React.ComponentPropsWithoutRef<"h2">) {
+  return (
+    <BaseAlertDialog.Title asChild>
+      <h2 className={cn("text-lg font-semibold")} {...props}>
+        {children}
+      </h2>
+    </BaseAlertDialog.Title>
+  );
+}
+
+// Dialog Description component
+export function DialogDescription({ children, ...props }: React.ComponentPropsWithoutRef<"p">) {
+  return (
+    <BaseAlertDialog.Description asChild>
+      <p className={cn("text-muted text-sm")} {...props}>
+        {children}
+      </p>
+    </BaseAlertDialog.Description>
+  );
+}
+
+// Dialog Actions container
+export function DialogActions({
+  children,
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  return (
+    <div className={cn("mt-5 flex shrink-0 justify-end gap-3", className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+// Dialog Close component
+export const DialogClose = BaseAlertDialog.Close;
+
+// Re-export AlertDialog for components that need it
+export const AlertDialog = BaseAlertDialog;
+
 export { Panel as DialogPanel };
+export { Dialog };
 export default Dialog;

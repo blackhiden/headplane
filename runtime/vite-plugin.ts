@@ -10,7 +10,7 @@ import type { RequestListener } from "node:http";
 
 import type { Plugin } from "vite";
 
-import { composeListener } from "./http";
+import { composeListener } from "./http.ts";
 
 export interface DevServerOptions {
   entry: string;

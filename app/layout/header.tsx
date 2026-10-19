@@ -21,10 +21,8 @@ import { useState } from "react";
 import { NavLink, unstable_useRoute as useRoute, useLocation, useSubmit } from "react-router";
 
 import Link from "~/components/link";
+import LogoMark from "~/components/logo-mark";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "~/components/menu";
-import logoBg from "~/logo/dark-bg.svg";
-import logoDark from "~/logo/dark.svg";
-import logoLight from "~/logo/light.svg";
 import { useUpdateCheckContext } from "~/update-check";
 import cn from "~/utils/cn";
 import type { ColorScheme } from "~/utils/color-scheme";
@@ -95,11 +93,7 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
       <div className="container flex items-center gap-x-4 py-4">
         <div className="flex min-w-0 items-center gap-x-4">
           <div className="flex items-center gap-x-2">
-            <picture className="min-w-8">
-              <source srcSet={logoLight} media="(prefers-color-scheme: dark)" />
-              <source srcSet={logoDark} media="(prefers-color-scheme: light)" />
-              <img src={logoBg} alt="Headplane logo" />
-            </picture>
+            <LogoMark />
             <h1 className="text-2xl font-semibold">headplane</h1>
           </div>
           {showTabs && (

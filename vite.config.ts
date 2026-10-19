@@ -7,7 +7,7 @@ import { cn } from "cn/vite";
 import { defineConfig } from "vite";
 import { parse } from "yaml";
 
-import { headplaneDevServer } from "./runtime/vite-plugin";
+import { headplaneDevServer } from "./runtime/vite-plugin.ts";
 
 const PROD_ENTRY = "./app/server/main.ts";
 const DEV_ENTRY = "./app/server/app.ts";
