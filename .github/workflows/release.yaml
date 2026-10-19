@@ -16,8 +16,28 @@ permissions:
   attestations: write
 
 jobs:
+  channel:
+    name: Release Channel
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{ steps.check.outputs.latest }}
+    steps:
+      # Patch releases on older lines must not take over `latest`.
+      - name: Check if this is the newest stable release
+        id: check
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          NEWEST=$(git ls-remote --tags --refs "$REPO_URL" 'v*' \
+            | sed 's|.*refs/tags/||' | grep -v -- - | sort -V | tail -n 1)
+          [[ "$TAG" == "$NEWEST" ]] && LATEST=true || LATEST=false
+          echo "Newest stable release is $NEWEST, latest=$LATEST"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+
   docker:
     name: Docker Release (${{ matrix.target }})
+    needs: channel
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -37,8 +57,9 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
           flavor: |
-            latest=auto
+            latest=${{ needs.channel.outputs.latest }}
             suffix=${{ matrix.tag_suffix }},onlatest=true
 
       - name: Set up QEMU
@@ -78,281 +99,9 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
-  build-binaries:
-    name: Build Native Packages (${{ matrix.arch }})
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: package.json
-
-      - name: Enable pnpm
-        run: corepack enable
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y patch
-
-      - name: Build application
-        env:
-          GOOS: linux
-          GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: 0
-          HEADPLANE_VERSION: ${{ github.ref_name }}
-          HEADPLANE_COMMIT: ${{ github.sha }}
-          HEADPLANE_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
-        run: |
-          ./build.sh --wasm --app --agent --healthcheck
-
-      - name: Create release package structure
-        run: |
-          VERSION="${{ github.ref_name }}"
-          ARCH="${{ matrix.arch }}"
-          PKG_NAME="headplane-${VERSION#v}-linux-${ARCH}"
-          PKG_DIR="dist/${PKG_NAME}"
-
-          mkdir -p "${PKG_DIR}"/{bin,lib,share/headplane}
-
-          # Copy built artifacts
-          cp -r build "${PKG_DIR}/share/headplane/"
-          cp -r drizzle "${PKG_DIR}/share/headplane/"
-          cp -r node_modules "${PKG_DIR}/share/headplane/"
-          cp -r public "${PKG_DIR}/share/headplane/"
-
-          # Copy Go binaries
-          cp build/hp_agent "${PKG_DIR}/lib/hp_agent"
-          cp build/hp_healthcheck "${PKG_DIR}/bin/hp_healthcheck"
-
-          # Create startup script
-          cat > "${PKG_DIR}/bin/headplane" <<'EOF'
-          #!/bin/sh
-          set -eu
-          HEADPLANE_ROOT="$(cd "$(dirname "$0")/../share/headplane" && pwd)"
-          export NODE_PATH="${HEADPLANE_ROOT}/node_modules"
-          exec node "${HEADPLANE_ROOT}/build/server/index.js" "$@"
-          EOF
-          chmod +x "${PKG_DIR}/bin/headplane"
-
-          # Create README
-          cat > "${PKG_DIR}/README.md" <<EOF
-          # Headplane ${VERSION}
-
-          This is a native build of Headplane for linux-${ARCH}.
-
-          ## Installation
-
-          Extract this archive and add the \`bin\` directory to your PATH:
-
-          \`\`\`bash
-          tar -xzf ${PKG_NAME}.tar.gz
-          cd ${PKG_NAME}
-          export PATH="\$PWD/bin:\$PATH"
-          headplane
-          \`\`\`
-
-          Or install system-wide:
-
-          \`\`\`bash
-          sudo cp -r bin/* /usr/local/bin/
-          sudo cp -r lib/* /usr/local/lib/
-          sudo cp -r share/* /usr/local/share/
-          \`\`\`
-
-          ## Requirements
-
-          - Node.js 24.2 or later
-          - Headscale 0.27.0 or later
-
-          ## Configuration
-
-          See https://headplane.net for configuration instructions.
-          EOF
-
-          # Create tar.gz
-          tar -czf "dist/${PKG_NAME}.tar.gz" -C dist "${PKG_NAME}"
-
-          # Create zip
-          (cd dist && zip -r "${PKG_NAME}.zip" "${PKG_NAME}")
-
-          # Create standalone binary package (minimal, just the binaries)
-          BINARY_DIR="dist/${PKG_NAME}-binary"
-          mkdir -p "${BINARY_DIR}"
-          cp build/hp_agent "${BINARY_DIR}/hp_agent"
-          cp build/hp_healthcheck "${BINARY_DIR}/hp_healthcheck"
-          tar -czf "dist/${PKG_NAME}-binary.tar.gz" -C "${BINARY_DIR}" .
-
-      - name: Create Debian package
-        run: |
-          VERSION="${{ github.ref_name }}"
-          ARCH="${{ matrix.arch }}"
-          PKG_NAME="headplane-${VERSION#v}-linux-${ARCH}"
-          DEB_ARCH="${ARCH/amd64/amd64}"
-          DEB_ARCH="${DEB_ARCH/arm64/arm64}"
-          DEB_DIR="dist/deb"
-
-          mkdir -p "${DEB_DIR}"/{DEBIAN,usr/bin,usr/lib/headplane,usr/share/headplane,etc/headplane,lib/systemd/system}
-
-          # Copy application files
-          cp -r build "${DEB_DIR}/usr/share/headplane/"
-          cp -r drizzle "${DEB_DIR}/usr/share/headplane/"
-          cp -r node_modules "${DEB_DIR}/usr/share/headplane/"
-          cp -r public "${DEB_DIR}/usr/share/headplane/"
-
-          # Copy binaries
-          cp build/hp_agent "${DEB_DIR}/usr/lib/headplane/hp_agent"
-          cp build/hp_healthcheck "${DEB_DIR}/usr/bin/hp_healthcheck"
-
-          # Create headplane wrapper script
-          cat > "${DEB_DIR}/usr/bin/headplane" <<'EOF'
-          #!/bin/sh
-          set -eu
-          export NODE_PATH="/usr/share/headplane/node_modules"
-          exec node /usr/share/headplane/build/server/index.js "$@"
-          EOF
-          chmod +x "${DEB_DIR}/usr/bin/headplane"
-
-          # Create example config
-          cat > "${DEB_DIR}/etc/headplane/config.yaml.example" <<'EOF'
-          # Headplane configuration
-          # Copy this file to config.yaml and customize as needed
-          # See https://headplane.net/configuration for full reference
-
-          server:
-            host: 0.0.0.0
-            port: 3000
-
-          headscale:
-            url: http://localhost:8080
-          EOF
-
-          # Create systemd service
-          cat > "${DEB_DIR}/lib/systemd/system/headplane.service" <<EOF
-          [Unit]
-          Description=Headplane - Headscale Web UI
-          Documentation=https://headplane.net
-          After=network-online.target
-          Wants=network-online.target
-
-          [Service]
-          Type=simple
-          User=headplane
-          Group=headplane
-          WorkingDirectory=/usr/share/headplane
-          Environment="NODE_PATH=/usr/share/headplane/node_modules"
-          Environment="HEADPLANE_CONFIG_PATH=/etc/headplane/config.yaml"
-          ExecStart=/usr/bin/node /usr/share/headplane/build/server/index.js
-          Restart=on-failure
-          RestartSec=5s
-          StandardOutput=journal
-          StandardError=journal
-
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-
-          # Create control file
-          INSTALLED_SIZE=$(du -sk "${DEB_DIR}/usr" | cut -f1)
-          cat > "${DEB_DIR}/DEBIAN/control" <<EOF
-          Package: headplane
-          Version: ${VERSION#v}
-          Section: web
-          Priority: optional
-          Architecture: ${DEB_ARCH}
-          Installed-Size: ${INSTALLED_SIZE}
-          Depends: nodejs (>= 24.2)
-          Maintainer: Headplane Contributors
-          Description: Feature-complete web UI for Headscale
-           Headplane is a web application to manage Headscale, a self-hosted
-           implementation of the Tailscale control server.
-          Homepage: https://headplane.net
-          EOF
-
-          # Create postinst script
-          cat > "${DEB_DIR}/DEBIAN/postinst" <<'EOF'
-          #!/bin/sh
-          set -e
-
-          # Create headplane user if it doesn't exist
-          if ! getent passwd headplane >/dev/null; then
-            useradd --system --home-dir /var/lib/headplane --shell /usr/sbin/nologin headplane
-          fi
-
-          # Create data directory
-          mkdir -p /var/lib/headplane
-          chown headplane:headplane /var/lib/headplane
-
-          # Set permissions
-          chmod 755 /usr/bin/headplane
-          chmod 755 /usr/bin/hp_healthcheck
-          chmod 755 /usr/lib/headplane/hp_agent
-
-          # Reload systemd
-          if [ -d /run/systemd/system ]; then
-            systemctl daemon-reload >/dev/null 2>&1 || true
-          fi
-
-          echo "Headplane has been installed."
-          echo "1. Copy /etc/headplane/config.yaml.example to /etc/headplane/config.yaml"
-          echo "2. Edit /etc/headplane/config.yaml with your Headscale URL and settings"
-          echo "3. Start the service: sudo systemctl start headplane"
-          echo "4. Enable on boot: sudo systemctl enable headplane"
-          EOF
-          chmod +x "${DEB_DIR}/DEBIAN/postinst"
-
-          # Create prerm script
-          cat > "${DEB_DIR}/DEBIAN/prerm" <<'EOF'
-          #!/bin/sh
-          set -e
-
-          # Stop service if running
-          if [ -d /run/systemd/system ]; then
-            systemctl stop headplane >/dev/null 2>&1 || true
-            systemctl disable headplane >/dev/null 2>&1 || true
-          fi
-          EOF
-          chmod +x "${DEB_DIR}/DEBIAN/prerm"
-
-          # Build the .deb package
-          dpkg-deb --build "${DEB_DIR}" "dist/${PKG_NAME}.deb"
-
-          # Clean up
-          rm -rf "${DEB_DIR}"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: headplane-${{ matrix.arch }}
-          path: dist/*
-          retention-days: 3
-
   release:
     name: GitHub Release
-    needs: [docker, build-binaries]
+    needs: [channel, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -365,41 +114,15 @@ jobs:
         with:
           node-version-file: package.json
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: headplane-*
-          path: artifacts
-          merge-multiple: true
-
-      - name: Organize artifacts
-        run: |
-          mkdir -p release-assets
-          find artifacts -type f \( -name "*.deb" -o -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release-assets/ \;
-          ls -lh release-assets/
-
-      - name: Generate checksums
-        run: |
-          cd release-assets
-          sha256sum * > SHA256SUMS
-          cat SHA256SUMS
-
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
+          LATEST: ${{ needs.channel.outputs.latest }}
         run: |
           node --disable-warning=ExperimentalWarning scripts/release.ts notes "$TAG" > "$RUNNER_TEMP/notes.md"
-
-          # Add checksums to release notes
-          echo "" >> "$RUNNER_TEMP/notes.md"
-          echo "## Checksums (SHA256)" >> "$RUNNER_TEMP/notes.md"
-          echo "\`\`\`" >> "$RUNNER_TEMP/notes.md"
-          cat release-assets/SHA256SUMS >> "$RUNNER_TEMP/notes.md"
-          echo "\`\`\`" >> "$RUNNER_TEMP/notes.md"
-
           if [[ "$TAG" == *-* ]]; then
-            gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --prerelease release-assets/*
+            gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --prerelease
           else
-            gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --latest release-assets/*
+            gh release create "$TAG" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --latest="$LATEST"
           fi

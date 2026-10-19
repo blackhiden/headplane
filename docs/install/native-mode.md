@@ -21,7 +21,7 @@ or prefer to avoid containers.
 - Go matching the `go` directive in the checked-out release's `go.mod`
   (only needed to build Headplane)
 - Node.js and [pnpm](https://pnpm.io/) matching the `engines` field in the
-  checked-out release's `package.json`. For v0.7.1, use Node.js `>=24.2 <25`
+  checked-out release's `package.json`. For v0.8.0, use Node.js `>=24.2 <25`
   and pnpm `>=10.4 <11`; `packageManager` pins pnpm to `10.4.0`.
 - Headscale version 0.27.0 or later installed and running
 - A [completed configuration file](./index.md#configuration) for Headplane.
@@ -187,6 +187,12 @@ Headplane and Headscale both run on the same machine because Headplane needs
 
 - Access to read and write the Head**scale** configuration file
 - Access to read the `/proc` filesystem on Linux to locate Headscale's process
+- Permission to send `SIGTERM` to Headscale, and a supervisor that restarts it
+
+Headscale only reloads its ACL policy on `SIGHUP`, so Headplane applies every
+other change by stopping Headscale and waiting for it to come back. Headscale's
+own systemd unit sets `Restart=always`, which is all this needs. Without a
+supervisor, Headscale stays down after the first change.
 
 #### Configuration
 
@@ -198,6 +204,10 @@ your Headplane configuration file:
 | **`integration.proc.enabled`** | Set to `true` to enable process inspection.                                                                                    |
 | **`headscale.config_path`**    | Path to your Head**scale** configuration file (e.g., `/etc/headscale/config.yaml`).                                            |
 | `headscale.dns_records_path`   | _Optional_. Refer to the [example configuration](https://github.com/tale/headplane/blob/main/config.example.yaml) for details. |
+
+To edit DNS records, set `dns.extra_records_path` in your Headscale
+configuration and make the file writable by Headplane. Records listed inline
+under `dns.extra_records` are shown read-only.
 
 With these settings in place, restart Headplane. You should now see additional
 options in the UI navbar such as "DNS" and "Settings" where you can manage your

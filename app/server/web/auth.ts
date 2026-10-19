@@ -3,7 +3,7 @@ import { isIP } from "node:net";
 
 import { eq, lt, sql } from "drizzle-orm";
 import { NodeSQLiteDatabase } from "drizzle-orm/node-sqlite";
-import { createCookie } from "react-router";
+import { createCookie, data } from "react-router";
 import { ulid } from "ulidx";
 
 import type { Machine } from "~/types";
@@ -83,6 +83,7 @@ export interface AuthServiceOptions {
 export interface AuthService {
   registerRequestClientAddress(request: Request, address: string | undefined): void;
   require(request: Request): Promise<Principal>;
+  requireCapability(request: Request, capabilities: Capabilities): Promise<Principal>;
   can(principal: Principal, capabilities: Capabilities): boolean;
   canManageNode(principal: Principal, node: Machine): boolean;
   getHeadscaleApiKey(principal: Principal): string;
@@ -515,6 +516,20 @@ export function createAuthService(opts: AuthServiceOptions): AuthService {
     return promise;
   }
 
+  async function requireCapability(
+    request: Request,
+    capabilities: Capabilities,
+  ): Promise<Principal> {
+    const principal = await require(request);
+    if (!can(principal, capabilities)) {
+      throw data("You don't have permission to do this. Ask your administrator for access.", {
+        status: 403,
+      });
+    }
+
+    return principal;
+  }
+
   function can(principal: Principal, capabilities: Capabilities): boolean {
     if (principal.kind === "api_key" || principal.kind === "password") {
       return true;
@@ -640,7 +655,7 @@ export function createAuthService(opts: AuthServiceOptions): AuthService {
         .set({
           name: profile?.name,
           email: profile?.email,
-          picture: profile?.picture,
+          picture: profile?.picture ?? null,
           ...(syncedRole && existing.role !== "owner"
             ? { role: syncedRole, caps: capsForRole(syncedRole) }
             : {}),
@@ -822,6 +837,7 @@ export function createAuthService(opts: AuthServiceOptions): AuthService {
   return {
     registerRequestClientAddress,
     require: require,
+    requireCapability,
     can,
     canManageNode,
     getHeadscaleApiKey,
