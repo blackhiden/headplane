@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 import cn from "~/utils/cn";
 
@@ -17,5 +17,24 @@ function Card(props: React.HTMLProps<HTMLDivElement>) {
     </div>
   );
 }
+
+function Title({ className, children, ...props }: React.HTMLProps<HTMLHeadingElement>) {
+  return (
+    <h2 {...props} className={cn("text-lg font-semibold tracking-tight", className)}>
+      {children}
+    </h2>
+  );
+}
+
+function Text({ className, children, ...props }: React.HTMLProps<HTMLParagraphElement>) {
+  return (
+    <p {...props} className={cn("text-muted text-sm", className)}>
+      {children}
+    </p>
+  );
+}
+
+Card.Title = Title;
+Card.Text = Text;
 
 export default Card;

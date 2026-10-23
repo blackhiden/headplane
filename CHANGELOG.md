@@ -1,3 +1,10 @@
+# Next
+
+## Fixes
+
+- Fixed the login page crashing with a 500 error by restoring the missing
+  `Card.Title` and `Card.Text` subcomponents on the shared `Card` component.
+
 # 1.0.10 (October 19, 2026)
 
 ## Changes
