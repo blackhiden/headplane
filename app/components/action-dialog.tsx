@@ -5,7 +5,6 @@ import { useFetcher } from "react-router";
 import Button from "~/components/button";
 import Callout from "~/components/callout";
 import {
-  AlertDialog,
   Dialog,
   DialogActions,
   DialogClose,
@@ -82,7 +81,11 @@ export default function ActionDialog({
     }
   }
 
-  const Root = isDestructive ? AlertDialog : Dialog;
+  // `Dialog` wraps `BaseAlertDialog.Root` internally and accepts the same props
+  // (`open`, `onOpenChange`, `onOpenChangeComplete`, `trigger`), so it is used
+  // for both destructive and non-destructive dialogs. `AlertDialog` is the
+  // namespace object of all alert-dialog parts and is not a valid JSX element.
+  const Root = Dialog;
 
   return (
     <Root

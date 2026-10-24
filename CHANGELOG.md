@@ -4,6 +4,11 @@
 
 - Fixed the login page crashing with a 500 error by restoring the missing
   `Card.Title` and `Card.Text` subcomponents on the shared `Card` component.
+- Fixed the Machines page (and other pages using destructive dialogs) crashing
+  with "Element type is invalid ... but got: object" (React error #130). The
+  `ActionDialog` component was rendering the `AlertDialog` namespace object as a
+  component; it now uses the `Dialog` wrapper, which already wraps the
+  underlying alert-dialog root and accepts the same props.
 
 # 1.0.10 (October 19, 2026)
 
