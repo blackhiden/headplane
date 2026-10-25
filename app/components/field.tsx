@@ -15,7 +15,7 @@ export const controlClass = cn(
 );
 
 export interface FieldProps {
-  label: string;
+  label?: string;
   labelHidden?: boolean;
   labelTooltip?: React.ReactNode;
   description?: React.ReactNode;
@@ -49,21 +49,23 @@ export default function Field({
       name={name}
       validate={validate}
     >
-      {labelTooltip ? (
-        <div className={cn("flex items-center gap-1", labelHidden && "sr-only")}>
-          <BaseField.Label className="text-fg text-sm font-medium">{label}</BaseField.Label>
-          <Tooltip className="w-72" content={labelTooltip}>
-            <Info
-              aria-label={`About ${label}`}
-              className="text-muted hover:text-fg size-3.5 transition-colors"
-            />
-          </Tooltip>
-        </div>
-      ) : (
-        <BaseField.Label className={cn("text-sm font-medium text-fg", labelHidden && "sr-only")}>
-          {label}
-        </BaseField.Label>
-      )}
+      {label ? (
+        labelTooltip ? (
+          <div className={cn("flex items-center gap-1", labelHidden && "sr-only")}>
+            <BaseField.Label className="text-fg text-sm font-medium">{label}</BaseField.Label>
+            <Tooltip className="w-72" content={labelTooltip}>
+              <Info
+                aria-label={`About ${label}`}
+                className="text-muted hover:text-fg size-3.5 transition-colors"
+              />
+            </Tooltip>
+          </div>
+        ) : (
+          <BaseField.Label className={cn("text-sm font-medium text-fg", labelHidden && "sr-only")}>
+            {label}
+          </BaseField.Label>
+        )
+      ) : null}
       {children}
       {description && (
         <BaseField.Description className="text-muted text-xs">{description}</BaseField.Description>

@@ -21,10 +21,8 @@ import { useState } from "react";
 import { NavLink, unstable_useRoute as useRoute, useLocation, useSubmit } from "react-router";
 
 import Link from "~/components/link";
+import LogoMark from "~/components/logo-mark";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "~/components/menu";
-import logoBg from "~/logo/dark-bg.svg";
-import logoDark from "~/logo/dark.svg";
-import logoLight from "~/logo/light.svg";
 import { useUpdateCheckContext } from "~/update-check";
 import cn from "~/utils/cn";
 import type { ColorScheme } from "~/utils/color-scheme";
@@ -88,22 +86,21 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
   return (
     <header
       className={cn(
-        "bg-mist-200 dark:bg-mist-950 text-mist-800 dark:text-mist-200",
-        "dark:border-b dark:border-mist-800 shadow-inner",
+        "sticky top-0 z-30 w-full",
+        "bg-canvas/80",
+        "backdrop-blur-lg",
+        "text-fg",
+        "border-b border-line",
       )}
     >
-      <div className="container flex items-center gap-x-4 py-4">
+      <div className="container flex items-center gap-x-4 py-3">
         <div className="flex min-w-0 items-center gap-x-4">
           <div className="flex items-center gap-x-2">
-            <picture className="min-w-8">
-              <source srcSet={logoLight} media="(prefers-color-scheme: dark)" />
-              <source srcSet={logoDark} media="(prefers-color-scheme: light)" />
-              <img src={logoBg} alt="Headplane logo" />
-            </picture>
-            <h1 className="text-2xl font-semibold">headplane</h1>
+            <LogoMark />
+            <h1 className="text-xl font-semibold tracking-tight">headplane</h1>
           </div>
           {showTabs && (
-            <nav className="hidden items-center gap-x-2 overflow-x-auto p-1 text-sm font-medium md:flex">
+            <nav className="hidden items-center gap-x-1 overflow-x-auto text-sm font-medium md:flex">
               {tabs.map((tab) => {
                 if (!access[tab.key]) return null;
                 if ((tab.key === "dns" || tab.key === "settings") && !configAvailable) return null;
@@ -113,13 +110,11 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
                     key={tab.to}
                     className={({ isActive }) =>
                       cn(
-                        "px-3 py-1.5 flex items-center gap-x-1.5 rounded-md text-nowrap",
-                        "hover:bg-mist-300/50 dark:hover:bg-mist-800",
-                        "focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40 focus:ring-offset-1",
-                        "dark:focus:ring-indigo-400/40 dark:focus:ring-offset-mist-900",
-                        isActive
-                          ? "bg-mist-300/70 dark:bg-mist-800 text-mist-900 dark:text-mist-50"
-                          : "text-mist-600 dark:text-mist-300",
+                        "px-3 py-1.5 flex items-center gap-x-1.5 rounded-md text-nowrap smooth-transition",
+                        "hover:bg-subtle",
+                        "focus:outline-hidden focus:ring-2 focus:ring-accent/40 focus:ring-offset-1",
+                        "dark:focus:ring-accent/40 dark:focus:ring-offset-canvas",
+                        isActive ? "bg-subtle text-fg shadow-sm" : "text-muted hover:text-fg",
                       )
                     }
                     prefetch="intent"
@@ -182,16 +177,16 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
             </MenuTrigger>
             <MenuContent align="end">
               <MenuItem disabled>
-                <div className="text-mist-900 dark:text-mist-50">
+                <div className="text-fg">
                   {user.subject === "api_key" ? (
                     <>
-                      <p className="font-bold">API Key</p>
-                      <p>{user.name}</p>
+                      <p className="font-semibold">API Key</p>
+                      <p className="text-muted">{user.name}</p>
                     </>
                   ) : (
                     <>
-                      <p className="font-bold">{user.name}</p>
-                      {user.email && <p>{user.email}</p>}
+                      <p className="font-semibold">{user.name}</p>
+                      {user.email && <p className="text-muted">{user.email}</p>}
                     </>
                   )}
                 </div>
@@ -239,13 +234,12 @@ export default function Header({ user, access, configAvailable }: HeaderProps) {
                   key={tab.to}
                   className={({ isActive }) =>
                     cn(
-                      "relative px-3 py-1.5 flex items-center gap-x-1.5 rounded-md text-nowrap",
-                      "hover:bg-mist-300/50 dark:hover:bg-mist-800",
-                      "focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40 focus:ring-offset-1",
-                      "dark:focus:ring-indigo-400/40 dark:focus:ring-offset-mist-900",
-                      "text-mist-600 dark:text-mist-300",
-                      isActive &&
-                        "text-mist-900 dark:text-mist-50 after:content-[''] after:absolute after:-bottom-2 after:inset-x-1 after:h-0.5 after:rounded-full after:bg-indigo-500",
+                      "relative px-2.5 py-1.5 flex items-center gap-x-1.5 rounded-md text-nowrap smooth-transition",
+                      "hover:bg-subtle",
+                      "focus:outline-hidden focus:ring-2 focus:ring-accent/40 focus:ring-offset-1",
+                      "dark:focus:ring-accent/40 dark:focus:ring-offset-canvas",
+                      "text-muted",
+                      isActive && "text-fg bg-subtle shadow-sm",
                     )
                   }
                   prefetch="intent"
@@ -315,7 +309,7 @@ function UpdateCheckMenuItem() {
           {ctx.isChecking ? "Checking for updates..." : "Check for Updates"}
         </span>
         {count > 0 && (
-          <span className="inline-flex size-5 items-center justify-center rounded-full bg-indigo-500 text-xs font-semibold text-white">
+          <span className="bg-accent text-accent-fg inline-flex size-5 items-center justify-center rounded-full text-xs font-semibold">
             {count}
           </span>
         )}

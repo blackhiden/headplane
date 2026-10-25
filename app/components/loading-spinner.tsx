@@ -28,11 +28,8 @@ export default function LoadingSpinner({ label, size = "md", className }: Loadin
       aria-live="polite"
       aria-label={label ?? "Loading"}
     >
-      <Loader2
-        className={cn("animate-spin text-mist-400 dark:text-mist-500", sizeClasses[size])}
-        aria-hidden="true"
-      />
-      {label && <p className="mt-3 text-sm text-mist-600 dark:text-mist-400">{label}</p>}
+      <Loader2 className={cn("animate-spin text-muted", sizeClasses[size])} aria-hidden="true" />
+      {label && <p className="text-muted mt-3 text-sm">{label}</p>}
     </div>
   );
 }

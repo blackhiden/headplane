@@ -30,9 +30,7 @@ export default function InstancesOverview({ loaderData }: Route.ComponentProps) 
       <div className="flex w-full items-center justify-between">
         <div>
           <h1 className="mb-2 text-2xl font-medium">Instances</h1>
-          <p className="text-mist-600 dark:text-mist-300">
-            Manage multiple Headscale instances from a single dashboard.
-          </p>
+          <p className="text-muted">Manage multiple Headscale instances from a single dashboard.</p>
         </div>
         <Link to="/instances/new">
           <Button variant="primary">
@@ -45,7 +43,7 @@ export default function InstancesOverview({ loaderData }: Route.ComponentProps) 
       <Card variant="flat">
         <Card.Title>Configured Instances</Card.Title>
         {instances.length === 0 ? (
-          <p className="text-sm text-mist-600 dark:text-mist-300">
+          <p className="text-muted text-sm">
             No instances configured yet. Add your first instance to get started.
           </p>
         ) : (
@@ -65,15 +63,13 @@ export default function InstancesOverview({ loaderData }: Route.ComponentProps) 
                     <code className="text-xs">{instance.apiUrl}</code>
                   </TableList.Cell>
                   <TableList.Cell>
-                    <span className="text-xs text-mist-500">Unknown</span>
+                    <span className="text-faint text-xs">Unknown</span>
                   </TableList.Cell>
                   <TableList.Cell>
                     {instance.isDefault ? (
-                      <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                        Yes
-                      </span>
+                      <span className="text-ok text-xs font-medium">Yes</span>
                     ) : (
-                      <span className="text-xs text-mist-500">No</span>
+                      <span className="text-faint text-xs">No</span>
                     )}
                   </TableList.Cell>
                   <TableList.Cell>

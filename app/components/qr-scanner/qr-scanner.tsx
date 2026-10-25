@@ -148,8 +148,9 @@ export function QRScanner({ onScan, onError, onClose }: QRScannerProps) {
       <div
         className={cn(
           "relative flex w-full max-w-lg flex-col items-center gap-4 p-4",
-          "rounded-xl bg-white dark:bg-mist-900",
-          "shadow-2xl",
+          "rounded-xl bg-surface",
+          "border border-line",
+          "shadow-overlay",
         )}
       >
         <button
@@ -157,11 +158,11 @@ export function QRScanner({ onScan, onError, onClose }: QRScannerProps) {
           onClick={handleClose}
           className={cn(
             "absolute right-4 top-4 z-10 rounded-lg p-2",
-            "bg-white/90 dark:bg-mist-800/90",
-            "text-mist-700 dark:text-mist-300",
-            "hover:bg-white dark:hover:bg-mist-800",
+            "bg-surface/90",
+            "text-muted",
+            "hover:bg-subtle",
             "transition-colors",
-            "focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40",
+            "focus:outline-hidden focus:ring-2 focus:ring-accent/40",
           )}
           aria-label="Close scanner"
         >
@@ -169,8 +170,8 @@ export function QRScanner({ onScan, onError, onClose }: QRScannerProps) {
         </button>
 
         <div className="flex items-center gap-2 pt-2">
-          <Camera className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-xl font-semibold text-mist-900 dark:text-white">Scan QR Code</h2>
+          <Camera className="text-accent h-6 w-6" />
+          <h2 className="text-xl font-semibold">Scan QR Code</h2>
         </div>
 
         <div className="relative h-[400px] w-full overflow-hidden rounded-lg bg-black">
@@ -221,7 +222,7 @@ export function QRScanner({ onScan, onError, onClose }: QRScannerProps) {
               role="status"
               aria-live="polite"
             >
-              <div className="rounded-lg bg-green-600 px-4 py-2 text-white shadow-lg">
+              <div className="bg-ok rounded-lg px-4 py-2 text-white shadow-lg">
                 <p className="font-semibold">QR Code Scanned Successfully!</p>
               </div>
             </div>
@@ -229,11 +230,7 @@ export function QRScanner({ onScan, onError, onClose }: QRScannerProps) {
         </div>
 
         {state.status === "scanning" && (
-          <p
-            className="text-center text-sm text-mist-600 dark:text-mist-400"
-            role="status"
-            aria-live="polite"
-          >
+          <p className="text-muted text-center text-sm" role="status" aria-live="polite">
             Position the QR code within the frame to scan
           </p>
         )}

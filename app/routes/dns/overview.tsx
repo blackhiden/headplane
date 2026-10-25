@@ -8,11 +8,10 @@ import { authContext, headscaleConfigContext } from "~/server/context";
 import { Capabilities } from "~/server/web/roles";
 
 import type { Route } from "./+types/overview";
+import General from "./components/general";
 import ManageDomains from "./components/manage-domains";
 import ManageNS from "./components/manage-ns";
 import ManageRecords from "./components/manage-records";
-import RenameTailnet from "./components/rename-tailnet";
-import ToggleMagic from "./components/toggle-magic";
 import { dnsAction } from "./dns-actions";
 
 // We do not want to expose every config value
@@ -78,7 +77,12 @@ export default function Page() {
           picked up by Headscale automatically.
         </Notice>
       ) : undefined}
-      <RenameTailnet isDisabled={isDisabled} name={data.baseDomain} />
+      <General
+        baseDomain={data.baseDomain}
+        isDisabled={isDisabled}
+        isMagicDns={data.magicDns}
+        isOverrideDns={data.overrideDns}
+      />
       <ManageNS isDisabled={isDisabled} nameservers={allNs} overrideLocalDns={data.overrideDns} />
       <ManageRecords isDisabled={isDisabled} records={data.extraRecords} />
       <ManageDomains
@@ -86,20 +90,6 @@ export default function Page() {
         magic={data.magicDns ? data.baseDomain : undefined}
         searchDomains={data.searchDomains}
       />
-
-      <div className="flex w-full flex-col sm:w-2/3">
-        <h1 className="mb-4 text-2xl font-medium">Magic DNS</h1>
-        <p className="mb-4">
-          Automatically register domain names for each device on the tailnet. Devices will be
-          accessible at{" "}
-          <Code>
-            [device].
-            {data.baseDomain}
-          </Code>{" "}
-          when Magic DNS is enabled.
-        </p>
-        <ToggleMagic isDisabled={isDisabled} isEnabled={data.magicDns} />
-      </div>
     </div>
   );
 }

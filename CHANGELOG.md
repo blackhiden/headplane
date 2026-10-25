@@ -1,3 +1,40 @@
+# Next
+
+## Changes
+
+- Beautified the UI/UX across all pages by replacing hardcoded Tailwind color
+  classes with the design system's semantic tokens (canvas, surface, raised,
+  subtle, hover, line, fg, muted, faint, accent, ok, warn, bad, danger). This
+  makes the interface more consistent, theme-aware, and maintainable.
+- The header is now sticky with a backdrop blur, and the active navigation tab
+  uses a subtle pill background instead of an underline indicator.
+- The footer now uses a backdrop blur and a cleaner version/URL display.
+- Buttons, dialogs, links, empty states, loading spinners, and error states now
+  consistently use the design system tokens for colors, borders, and shadows.
+- Toasts now show a type-specific icon (info, success, or error) with matching
+  accent colors.
+- The login page, machines, DERP, routes, settings, topology, audit, instances,
+  users, and admin pages all use the design system tokens for consistent
+  theming across light and dark modes.
+
+## Fixes
+
+- Fixed the Audit Log page crashing with `ReferenceError: props is not defined`.
+  The shared `Select` component referenced `props` without it being a function
+  parameter; it now properly accepts and uses the `aria-label` prop.
+- Fixed the Administration page crashing with
+  `TypeError: Cannot destructure property 'box' of 'u[e]' as it is undefined`.
+  The page passed an unsupported `variant="default"` to the `Notice` component;
+  it now uses the supported `"info"` variant, and the `Callout` component falls
+  back to a neutral style for any unknown variant instead of crashing.
+- Fixed the login page crashing with a 500 error by restoring the missing
+  `Card.Title` and `Card.Text` subcomponents on the shared `Card` component.
+- Fixed the Machines page (and other pages using destructive dialogs) crashing
+  with "Element type is invalid ... but got: object" (React error #130). The
+  `ActionDialog` component was rendering the `AlertDialog` namespace object as a
+  component; it now uses the `Dialog` wrapper, which already wraps the
+  underlying alert-dialog root and accepts the same props.
+
 # 1.0.10 (October 19, 2026)
 
 ## Changes

@@ -15,7 +15,7 @@ fi
 
 # --- Step 1: Choose Environment ---
 # --- Step 2: Execute based on choice ---
-APP_VERSION="$(git rev-parse --short HEAD)"
+APP_VERSION="$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")"
 BASE_NAME="ghcr.io/blackhiden/headplane"
 echo -n "Enter you version: "
 read -r VERSION
@@ -45,7 +45,9 @@ docker build \
   --build-arg APP_VERSION="${APP_VERSION}" \
   --build-arg BUILD_DATE="${BUILD_DATE}" .
 docker tag ${IMAGE_NAME} "${BASE_NAME}:latest"
+docker push ${IMAGE_NAME}
+docker push "${BASE_NAME}:latest"
 echo "Starting the services..."
 echo "Build complete. Services are starting."
 echo "Run 'docker compose logs -f' to see the logs."
-;;
+

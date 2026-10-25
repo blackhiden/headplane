@@ -290,9 +290,7 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">User Profile</h1>
-          <p className="mt-1 text-sm text-mist-600 dark:text-mist-300">
-            Manage your profile information and password
-          </p>
+          <p className="text-muted mt-1 text-sm">Manage your profile information and password</p>
         </div>
       </div>
 
@@ -363,12 +361,12 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 pr-10 text-sm dark:border-mist-800 dark:bg-mist-900"
+                className="border-line bg-surface w-full rounded-md border px-3 py-2 pr-10 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -389,17 +387,17 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
                 required
                 autoComplete="new-password"
                 minLength={8}
-                className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 pr-10 text-sm dark:border-mist-800 dark:bg-mist-900"
+                className="border-line bg-surface w-full rounded-md border px-3 py-2 pr-10 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="mt-1 text-xs text-mist-600 dark:text-mist-400">Minimum 8 characters</p>
+            <p className="text-faint mt-1 text-xs">Minimum 8 characters</p>
           </div>
 
           <div>
@@ -415,12 +413,12 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 pr-10 text-sm dark:border-mist-800 dark:bg-mist-900"
+                className="border-line bg-surface w-full rounded-md border px-3 py-2 pr-10 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -436,12 +434,12 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
       <Dialog isOpen={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogPanel variant="unactionable">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="bg-ok-subtle flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+              <User className="text-ok h-5 w-5" />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold">Success</h3>
-              <p className="mt-1 text-sm text-mist-600 dark:text-mist-300">{modalMessage}</p>
+              <p className="text-muted mt-1 text-sm">{modalMessage}</p>
             </div>
           </div>
         </DialogPanel>
@@ -450,12 +448,12 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
       <Dialog isOpen={showErrorModal} onOpenChange={setShowErrorModal}>
         <DialogPanel variant="unactionable">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <span className="text-lg font-bold text-red-600 dark:text-red-400">!</span>
+            <div className="bg-bad-subtle flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+              <span className="text-bad text-lg font-bold">!</span>
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold">Error</h3>
-              <p className="mt-1 text-sm text-mist-600 dark:text-mist-300">{modalMessage}</p>
+              <p className="text-muted mt-1 text-sm">{modalMessage}</p>
             </div>
           </div>
         </DialogPanel>

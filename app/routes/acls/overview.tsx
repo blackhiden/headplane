@@ -308,7 +308,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         <Card className="max-w-2xl" variant="flat">
           <div className="flex items-center justify-between gap-4">
             <Card.Title>ACL Policy Unavailable</Card.Title>
-            <AlertCircle className="mb-2 h-6 w-6 text-red-500" />
+            <AlertCircle className="text-bad mb-2 h-6 w-6" />
           </div>
           <Card.Text>
             The ACL policy is currently unavailable because the policy file does not exist on the

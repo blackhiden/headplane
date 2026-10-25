@@ -4,7 +4,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends patch && rm -rf
 
 COPY go.mod go.sum build.sh ./
 COPY patches/ ./patches/
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+	--mount=type=cache,target=/root/.cache/go-build \
+	--mount=type=bind,source=go.mod,target=go.mod \
+	--mount=type=bind,source=go.sum,target=go.sum \
+	go mod download
 
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
@@ -15,12 +19,14 @@ ARG IMAGE_TAG
 ARG APP_VERSION=v0.0.0
 ARG APP_COMMIT=unknown
 ARG BUILD_DATE=
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 IMAGE_TAG=$APP_VERSION \
-	./build.sh --wasm --agent --fake-shell --healthcheck \
-		--wasm-output /bin/hp_ssh.wasm \
-		--agent-output /bin/hp_agent \
-		--fake-shell-output /bin/fake-sh \
-		--healthcheck-output /bin/hp_healthcheck
+RUN --mount=type=cache,target=/go/pkg/mount \
+	--mount=type=cache,target=/root/.cache/go-build \
+		GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 IMAGE_TAG=$APP_VERSION \
+		./build.sh --wasm --agent --fake-shell --healthcheck \
+			--wasm-output /bin/hp_ssh.wasm \
+			--agent-output /bin/hp_agent \
+			--fake-shell-output /bin/fake-sh \
+			--healthcheck-output /bin/hp_healthcheck
 
 RUN chmod +x /bin/hp_ssh.wasm
 RUN chmod +x /bin/hp_agent

@@ -67,9 +67,11 @@ interface ErrorStateProps {
 export function ErrorState({ icon, title, description, children }: ErrorStateProps) {
   return (
     <div className="flex flex-col items-center py-24 text-center">
-      <span className="text-muted [&>svg]:size-8">{icon}</span>
-      <h2 className="mt-4 text-lg font-semibold text-balance">{title}</h2>
-      {description && <p className="text-muted mt-1 max-w-md text-balance">{description}</p>}
+      <span className="text-muted border-line bg-subtle flex size-14 items-center justify-center rounded-2xl border [&>svg]:size-6">
+        {icon}
+      </span>
+      <h2 className="mt-5 text-lg font-semibold text-balance">{title}</h2>
+      {description && <p className="text-muted mt-1.5 max-w-md text-balance">{description}</p>}
       {children}
     </div>
   );

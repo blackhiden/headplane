@@ -13,7 +13,7 @@ import { LiveDataProvider } from "~/utils/live-data";
 import ToastProvider from "~/utils/toast-provider";
 
 import type { Route } from "./+types/root";
-import { ErrorBanner } from "./components/error-banner";
+import ErrorPage from "./layout/error-page";
 import { PluginProvider } from "./plugins";
 import { headscaleContext } from "./server/context";
 import { UpdateCheckModal, UpdateCheckProvider } from "./update-check";
@@ -102,7 +102,7 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
               <Links />
               <link href={`${__PREFIX__}/favicon.ico`} rel="icon" />
             </head>
-            <body className="w-full overflow-x-hidden overscroll-none dark:bg-mist-900 dark:text-mist-50">
+            <body className="w-full overflow-x-hidden overscroll-none">
               {children}
               <ToastProvider />
               <ScrollRestoration />
@@ -116,11 +116,7 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  return (
-    <div className="flex h-screen w-screen items-center justify-center p-4">
-      <ErrorBanner className="max-w-2xl" error={error} />
-    </div>
-  );
+  return <ErrorPage error={error} />;
 }
 
 export default function App() {

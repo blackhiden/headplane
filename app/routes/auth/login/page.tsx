@@ -131,10 +131,10 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
         ) : oidcErrorCodes.length > 0 ? (
           <OidcConfigErrorNotice errors={oidcErrorCodes} />
         ) : showCookieWarning ? (
-          <Card className="m-4 mb-4 max-w-md border border-red-500 sm:m-0 sm:mb-4">
+          <Card className="border-bad m-4 mb-4 max-w-md border sm:m-0 sm:mb-4">
             <div className="flex items-center justify-between gap-4">
-              <Card.Title className="text-red-500">Configuration Issue</Card.Title>
-              <AlertCircle className="mb-2 h-6 w-6 text-red-500" />
+              <Card.Title className="text-bad">Configuration Issue</Card.Title>
+              <AlertCircle className="text-bad mb-2 h-6 w-6" />
             </div>
             {showCookieWarning ? (
               <Card.Text className="text-sm">
@@ -204,7 +204,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
                     type="button"
                     disabled={!isHydrated}
                     onClick={() => setShowPassword((visible) => !visible)}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-600 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-50 dark:text-gray-400 dark:hover:text-gray-100"
+                    className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2 text-sm disabled:pointer-events-none disabled:opacity-50"
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
@@ -228,9 +228,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
               </>
             )}
             {actionData?.success === false ? (
-              <Card.Text className="mb-2 text-sm text-red-600 dark:text-red-300">
-                {actionData.message}
-              </Card.Text>
+              <Card.Text className="text-bad mb-2 text-sm">{actionData.message}</Card.Text>
             ) : undefined}
             <Button className="w-full" type="submit" variant="heavy">
               Sign In

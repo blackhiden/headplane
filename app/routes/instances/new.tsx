@@ -60,18 +60,13 @@ export default function NewInstance({ actionData }: Route.ComponentProps) {
         </Link>
         <div>
           <h1 className="text-2xl font-medium">Add Instance</h1>
-          <p className="text-sm text-mist-600 dark:text-mist-300">
-            Configure a new Headscale instance.
-          </p>
+          <p className="text-muted text-sm">Configure a new Headscale instance.</p>
         </div>
       </div>
 
       {actionData?.error && (
-        <Card
-          variant="flat"
-          className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
-        >
-          <p className="text-sm text-red-700 dark:text-red-300">{actionData.error}</p>
+        <Card variant="flat" className="border-bad/20 bg-bad-subtle">
+          <p className="text-bad text-sm">{actionData.error}</p>
         </Card>
       )}
 
@@ -85,7 +80,7 @@ export default function NewInstance({ actionData }: Route.ComponentProps) {
                 Name *
               </label>
               <Input type="text" id="name" name="name" placeholder="Production" required />
-              <p className="mt-1 text-xs text-mist-500">A friendly name for this instance.</p>
+              <p className="text-faint mt-1 text-xs">A friendly name for this instance.</p>
             </div>
 
             <div>
@@ -99,7 +94,7 @@ export default function NewInstance({ actionData }: Route.ComponentProps) {
                 placeholder="https://headscale.example.com"
                 required
               />
-              <p className="mt-1 text-xs text-mist-500">The base URL of the Headscale API.</p>
+              <p className="text-faint mt-1 text-xs">The base URL of the Headscale API.</p>
             </div>
 
             <div>
@@ -107,7 +102,7 @@ export default function NewInstance({ actionData }: Route.ComponentProps) {
                 API Key
               </label>
               <Input type="password" id="apiKey" name="apiKey" placeholder="Optional" />
-              <p className="mt-1 text-xs text-mist-500">
+              <p className="text-faint mt-1 text-xs">
                 API key for authentication (stored encrypted).
               </p>
             </div>
@@ -117,7 +112,7 @@ export default function NewInstance({ actionData }: Route.ComponentProps) {
                 OIDC Client ID
               </label>
               <Input type="text" id="oidcClientId" name="oidcClientId" placeholder="Optional" />
-              <p className="mt-1 text-xs text-mist-500">OAuth/OIDC client ID if applicable.</p>
+              <p className="text-faint mt-1 text-xs">OAuth/OIDC client ID if applicable.</p>
             </div>
 
             <div>
@@ -130,7 +125,7 @@ export default function NewInstance({ actionData }: Route.ComponentProps) {
                 name="oidcClientSecret"
                 placeholder="Optional"
               />
-              <p className="mt-1 text-xs text-mist-500">
+              <p className="text-faint mt-1 text-xs">
                 OAuth/OIDC client secret (stored encrypted).
               </p>
             </div>

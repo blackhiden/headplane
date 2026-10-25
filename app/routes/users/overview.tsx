@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 
+import Callout from "~/components/callout";
 import EmptyState from "~/components/empty-state";
+import Link from "~/components/link";
 import PageError from "~/components/page-error";
+import PageHeader from "~/components/page-header";
 import {
   appConfigContext,
   authContext,
@@ -22,7 +25,7 @@ import { getUserDisplayName } from "~/utils/user";
 import type { Route } from "./+types/overview";
 import HeadplaneUserRow from "./components/headplane-user-row";
 import HeadscaleUserRow from "./components/headscale-user-row";
-import ManageBanner from "./components/manage-banner";
+import CreateUser from "./dialogs/create-user";
 import { userAction } from "./user-actions";
 
 export interface HeadplaneUserData {
@@ -192,20 +195,35 @@ export const action = userAction;
 export default function Page({ loaderData }: Route.ComponentProps) {
   return (
     <>
-      <h1 className="mb-1.5 text-2xl font-medium">Users</h1>
-      <p className="text-md mb-8">Manage the users in your network and their permissions.</p>
-      <ManageBanner isDisabled={!loaderData.writable} oidc={loaderData.oidc} />
+      <PageHeader
+        actions={
+          <CreateUser isDisabled={!loaderData.writable} isOidc={loaderData.oidc !== undefined} />
+        }
+        description={
+          loaderData.oidc ? (
+            <>
+              People who can sign in to Headplane, managed through your{" "}
+              <Link external styled to={loaderData.oidc.issuer}>
+                OIDC provider
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              People in your tailnet, managed locally.{" "}
+              <Link external styled to="https://headscale.net/stable/ref/oidc">
+                Set up OIDC
+              </Link>
+            </>
+          )
+        }
+        title="Users"
+      />
 
       {loaderData.apiError && (
-        <div
-          className={cn(
-            "mb-6 flex items-start gap-3 rounded-lg border p-4",
-            "border-red-200 bg-red-50 text-red-800",
-            "dark:border-red-800 dark:bg-red-950 dark:text-red-200",
-          )}
-        >
-          <p className="text-sm">{loaderData.apiError}</p>
-        </div>
+        <Callout className="mb-6" variant="error">
+          {loaderData.apiError}
+        </Callout>
       )}
 
       <section>
@@ -219,7 +237,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] table-auto rounded-lg">
-              <thead className="text-mist-600 dark:text-mist-300">
+              <thead className="text-muted">
                 <tr className="px-0.5 text-left">
                   <th className="pb-2 text-xs font-bold uppercase">User</th>
                   <th className="pb-2 text-xs font-bold uppercase">Role</th>
@@ -230,12 +248,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody
-                className={cn(
-                  "divide-y divide-mist-100 dark:divide-mist-800 align-top",
-                  "border-t border-mist-100 dark:border-mist-800",
-                )}
-              >
+              <tbody className={cn("divide-y divide-line align-top", "border-t border-line")}>
                 {loaderData.headplaneUsers.map((user) => (
                   <HeadplaneUserRow
                     canEditGroups={loaderData.canEditGroups}
@@ -257,13 +270,13 @@ export default function Page({ loaderData }: Route.ComponentProps) {
       {!loaderData.apiError && loaderData.unlinkedHeadscaleUsers.length > 0 && (
         <section className="mt-10">
           <h2 className="mb-1 text-lg font-medium">Unlinked Headscale Users</h2>
-          <p className="mb-3 text-sm text-mist-600 dark:text-mist-300">
+          <p className="text-muted mb-3 text-sm">
             These Headscale users are not linked to a Headplane account and cannot be managed
             through Headplane.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] table-auto rounded-lg">
-              <thead className="text-mist-600 dark:text-mist-300">
+              <thead className="text-muted">
                 <tr className="px-0.5 text-left">
                   <th className="pb-2 text-xs font-bold uppercase">User</th>
                   <th className="pb-2 text-xs font-bold uppercase">Created At</th>
@@ -273,12 +286,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody
-                className={cn(
-                  "divide-y divide-mist-100 dark:divide-mist-800 align-top",
-                  "border-t border-mist-100 dark:border-mist-800",
-                )}
-              >
+              <tbody className={cn("divide-y divide-line align-top", "border-t border-line")}>
                 {loaderData.unlinkedHeadscaleUsers.map((user) => (
                   <HeadscaleUserRow
                     canEditGroups={loaderData.canEditGroups}

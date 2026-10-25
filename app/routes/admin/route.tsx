@@ -301,7 +301,7 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Administration</h1>
-          <p className="mt-1 text-sm text-mist-600 dark:text-mist-300">
+          <p className="text-muted mt-1 text-sm">
             Manage your local administrator account and API keys
           </p>
         </div>
@@ -310,7 +310,7 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
         </Link>
       </div>
 
-      <Notice title="Single Local Administrator Mode" variant="default">
+      <Notice title="Single Local Administrator Mode" variant="info">
         Headplane is configured for one local administrator. User management is not available in
         this mode.
       </Notice>
@@ -338,7 +338,7 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 text-sm dark:border-mist-800 dark:bg-mist-900"
+              className="border-line bg-surface w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
 
@@ -355,9 +355,9 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
               required
               autoComplete="new-password"
               minLength={8}
-              className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 text-sm dark:border-mist-800 dark:bg-mist-900"
+              className="border-line bg-surface w-full rounded-md border px-3 py-2 text-sm"
             />
-            <p className="mt-1 text-xs text-mist-600 dark:text-mist-400">Minimum 8 characters</p>
+            <p className="text-faint mt-1 text-xs">Minimum 8 characters</p>
           </div>
 
           <div>
@@ -372,7 +372,7 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 text-sm dark:border-mist-800 dark:bg-mist-900"
+              className="border-line bg-surface w-full rounded-md border px-3 py-2 text-sm"
             />
           </div>
 

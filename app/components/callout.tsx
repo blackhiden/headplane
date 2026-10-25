@@ -34,7 +34,8 @@ export default function Callout({
     return null;
   }
 
-  const { box, icon: iconClass, Icon } = variants[variant];
+  const style = variants[variant] ?? variants.neutral;
+  const { box, icon: iconClass, Icon } = style;
   const isUrgent = variant === "warning" || variant === "error";
 
   return (

@@ -68,8 +68,8 @@ export default function BulkActions({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 dark:border-indigo-800 dark:bg-indigo-950/40">
-        <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+      <div className="border-accent/20 bg-accent-subtle mb-4 flex flex-wrap items-center gap-3 rounded-lg border px-4 py-2">
+        <p className="text-accent text-sm font-medium">
           {count} {count === 1 ? "machine" : "machines"} selected
         </p>
         <div className="flex items-center gap-2">
@@ -87,7 +87,7 @@ export default function BulkActions({
           </Button>
         </div>
         <button
-          className="ml-auto flex items-center gap-1 text-sm font-medium text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+          className="text-muted hover:text-fg ml-auto flex items-center gap-1 text-sm font-medium"
           onClick={onClear}
           type="button"
         >
@@ -162,9 +162,7 @@ export default function BulkActions({
             defined in your access control policy before they can be assigned.
           </Text>
           {error ? (
-            <p className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
-              {error}
-            </p>
+            <p className="bg-bad-subtle text-bad mt-2 rounded-lg p-3 text-sm">{error}</p>
           ) : null}
           <TableList className="mt-4">
             {tags.length === 0 ? (
@@ -231,7 +229,7 @@ export default function BulkActions({
             </div>
           ) : null}
           {policyTags !== undefined && tags.some((t) => !policyTags.includes(t)) ? (
-            <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+            <p className="bg-warn-subtle text-warn mt-2 rounded-lg p-3 text-sm">
               {tags.filter((t) => !policyTags.includes(t)).join(", ")}{" "}
               {tags.filter((t) => !policyTags.includes(t)).length === 1 ? "is" : "are"} not declared
               under <code className="font-mono">tagOwners</code> in your policy, so no rule will
