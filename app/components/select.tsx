@@ -11,7 +11,7 @@ export interface SelectItem {
 
 export interface SelectProps {
   items: SelectItem[];
-  label: string;
+  label?: string;
   name?: string;
   className?: string;
   placeholder?: string;
@@ -23,6 +23,7 @@ export interface SelectProps {
   value?: string | null;
   defaultValue?: string | null;
   onValueChange?: (value: string | null) => void;
+  "aria-label"?: string;
 }
 
 export default function Select({
@@ -39,12 +40,13 @@ export default function Select({
   defaultValue,
   onValueChange,
   name,
+  "aria-label": ariaLabel,
 }: SelectProps) {
   const selectedItem =
     value !== undefined ? (items.find((i) => i.value === value) ?? null) : undefined;
   const defaultSelectedItem =
     defaultValue !== undefined ? (items.find((i) => i.value === defaultValue) ?? null) : undefined;
-  const accessibleLabel = props["aria-label"] ?? label ?? placeholder ?? "Select an option";
+  const accessibleLabel = ariaLabel ?? label ?? placeholder ?? "Select an option";
 
   return (
     <Field
@@ -54,6 +56,7 @@ export default function Select({
       errorMessage={errorMessage}
       invalid={invalid}
       label={label}
+      labelHidden={!label}
       name={name}
     >
       <Combobox.Root
