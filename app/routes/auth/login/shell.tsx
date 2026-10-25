@@ -47,6 +47,7 @@ export default function Shell({ title, description, isWide, children }: Props) {
       <div aria-hidden className="sticky top-0 hidden h-dvh flex-1 p-3 lg:block">
         <div className="bg-subtle border-line relative size-full overflow-hidden rounded-xl border">
           <Grid />
+          <div className="from-canvas/40 pointer-events-none absolute inset-0 bg-gradient-to-t to-transparent" />
         </div>
       </div>
     </div>

@@ -112,14 +112,14 @@ export default function Page({ loaderData }: Route.ComponentProps) {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1 rounded-lg bg-mist-100/80 p-1 dark:bg-mist-800/60">
+        <div className="bg-subtle flex items-center gap-1 rounded-lg p-1">
           {filterOptions.map((option) => (
             <button
               className={cn(
                 "rounded-md px-3 py-1.5 text-sm font-medium transition-all",
                 filter === option.value
-                  ? "bg-white text-mist-900 shadow-surface dark:bg-mist-900 dark:text-white"
-                  : "text-mist-600 hover:text-mist-900 dark:text-mist-300 dark:hover:text-white",
+                  ? "bg-surface text-fg shadow-surface"
+                  : "text-muted hover:text-fg",
               )}
               key={option.value}
               onClick={() => setFilter(option.value)}
@@ -131,7 +131,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
         </div>
         <select
           aria-label="Filter by owner"
-          className="rounded-md border border-mist-200 bg-white px-3 py-1.5 text-sm dark:border-mist-800 dark:bg-mist-900"
+          className="border-line bg-surface rounded-md border px-3 py-1.5 text-sm"
           onChange={(e) => setSelectedGroup(e.target.value || null)}
           value={selectedGroup ?? ""}
         >
@@ -142,7 +142,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
             </option>
           ))}
         </select>
-        <span className="ml-auto text-sm whitespace-nowrap text-mist-500">
+        <span className="text-faint ml-auto text-sm whitespace-nowrap">
           {filteredNodes.length} of {nodes.length} machines
         </span>
       </div>
@@ -165,7 +165,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
         <>
           <Topology graph={graph} />
 
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-mist-600 dark:text-mist-300">
+          <div className="text-muted mt-4 flex flex-wrap items-center gap-4 text-sm">
             <span className="font-medium">Legend:</span>
             {groups.map((group) => (
               <span className="flex items-center gap-1.5" key={group}>
@@ -181,11 +181,11 @@ export default function Page({ loaderData }: Route.ComponentProps) {
               Exit node
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded-full bg-green-500" />
+              <span className="bg-ok inline-block h-3 w-3 rounded-full" />
               Online
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded-full bg-mist-300 dark:bg-mist-600" />
+              <span className="bg-line-strong inline-block h-3 w-3 rounded-full" />
               Offline
             </span>
           </div>

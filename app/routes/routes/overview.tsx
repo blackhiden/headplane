@@ -255,11 +255,11 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] table-auto rounded-lg">
-                  <thead className="text-mist-600 dark:text-mist-300">
+                  <thead className="text-muted">
                     <tr className="px-0.5 text-left">
                       <th className="pb-2 text-xs font-bold uppercase">
                         <button
-                          className="flex items-center gap-1 hover:text-mist-800 dark:hover:text-mist-100"
+                          className="hover:text-fg flex items-center gap-1"
                           onClick={() => setSort("status")}
                           type="button"
                         >
@@ -269,7 +269,7 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
                       </th>
                       <th className="pb-2 text-xs font-bold uppercase">
                         <button
-                          className="flex items-center gap-1 hover:text-mist-800 dark:hover:text-mist-100"
+                          className="hover:text-fg flex items-center gap-1"
                           onClick={() => setSort("route")}
                           type="button"
                         >
@@ -279,7 +279,7 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
                       </th>
                       <th className="pb-2 text-xs font-bold uppercase">
                         <button
-                          className="flex items-center gap-1 hover:text-mist-800 dark:hover:text-mist-100"
+                          className="hover:text-fg flex items-center gap-1"
                           onClick={() => setSort("type")}
                           type="button"
                         >
@@ -289,7 +289,7 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
                       </th>
                       <th className="pb-2 text-xs font-bold uppercase">
                         <button
-                          className="flex items-center gap-1 hover:text-mist-800 dark:hover:text-mist-100"
+                          className="hover:text-fg flex items-center gap-1"
                           onClick={() => setSort("machine")}
                           type="button"
                         >
@@ -302,24 +302,17 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
                       </th>
                     </tr>
                   </thead>
-                  <tbody
-                    className={cn(
-                      "divide-y divide-mist-100 dark:divide-mist-800",
-                      "border-t border-mist-100 dark:border-mist-800",
-                    )}
-                  >
+                  <tbody className={cn("divide-y divide-line", "border-t border-line")}>
                     {paginatedRoutes.map((entry) => (
                       <tr
-                        className="transition-colors hover:bg-mist-50 dark:hover:bg-mist-900/50"
+                        className="hover:bg-subtle transition-colors"
                         key={`${entry.node.id}:${entry.route}`}
                       >
                         <td className="py-2 pr-4">
                           <span
                             className={cn(
                               "text-xs font-medium",
-                              entry.approved
-                                ? "text-green-600 dark:text-green-500"
-                                : "text-amber-600 dark:text-amber-500",
+                              entry.approved ? "text-ok" : "text-warn",
                             )}
                           >
                             {entry.approved ? "Approved" : "Pending"}
@@ -332,12 +325,12 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
                           <div className="flex items-center gap-2">
                             {entry.isExit ? (
                               <>
-                                <GlobeLock className="h-4 w-4 text-mist-500" />
+                                <GlobeLock className="text-faint h-4 w-4" />
                                 <span className="text-sm">Exit node</span>
                               </>
                             ) : (
                               <>
-                                <RouteOff className="h-4 w-4 text-mist-500" />
+                                <RouteOff className="text-faint h-4 w-4" />
                                 <span className="text-sm">Subnet route</span>
                               </>
                             )}
@@ -373,15 +366,15 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-mist-500">
+                  <p className="text-faint text-sm">
                     Page {page} of {totalPages} · {sortedRoutes.length} route
                     {sortedRoutes.length !== 1 ? "s" : ""}
                   </p>
                   <div className="flex items-center gap-2">
                     <button
                       className={cn(
-                        "flex items-center gap-1 rounded-md border border-mist-200 px-3 py-1.5 text-sm font-medium",
-                        "hover:bg-mist-50 dark:border-mist-700 dark:bg-mist-800/50 dark:hover:bg-mist-700/50",
+                        "flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium",
+                        "hover:bg-subtle",
                         "transition-colors",
                         page <= 1 && "pointer-events-none opacity-50",
                       )}
@@ -394,8 +387,8 @@ export default function RoutesOverview({ loaderData }: Route.ComponentProps) {
                     </button>
                     <button
                       className={cn(
-                        "flex items-center gap-1 rounded-md border border-mist-200 px-3 py-1.5 text-sm font-medium",
-                        "hover:bg-mist-50 dark:border-mist-700 dark:bg-mist-800/50 dark:hover:bg-mist-700/50",
+                        "flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium",
+                        "hover:bg-subtle",
                         "transition-colors",
                         page >= totalPages && "pointer-events-none opacity-50",
                       )}

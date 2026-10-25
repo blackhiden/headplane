@@ -269,8 +269,8 @@ export default function ScanQRPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-mist-900 dark:text-mist-50">Scan QR Code</h1>
-        <p className="mt-2 text-sm text-mist-600 dark:text-mist-400">
+        <h1 className="text-2xl font-bold">Scan QR Code</h1>
+        <p className="text-muted mt-2 text-sm">
           Scan a QR code from a device registration page to quickly approve and register it to your
           network.
         </p>
@@ -311,30 +311,18 @@ export default function ScanQRPage() {
         )}
 
         {scannedData && !error && (
-          <div
-            className={cn(
-              "rounded-lg border p-4",
-              "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950",
-            )}
-          >
-            <p className="text-sm font-medium text-green-800 dark:text-green-200">
-              QR code scanned successfully!
-            </p>
-            <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+          <div className={cn("rounded-lg border p-4", "border-ok/20 bg-ok-subtle")}>
+            <p className="text-ok text-sm font-medium">QR code scanned successfully!</p>
+            <p className="text-ok/80 mt-1 text-xs">
               Click &quot;Register Device&quot; to complete the registration.
             </p>
           </div>
         )}
 
         {error && (
-          <div
-            className={cn(
-              "rounded-lg border p-4",
-              "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950",
-            )}
-          >
-            <p className="text-sm font-medium text-red-800 dark:text-red-200">Error</p>
-            <p className="mt-1 text-xs text-red-700 dark:text-red-300">{error}</p>
+          <div className={cn("rounded-lg border p-4", "border-bad/20 bg-bad-subtle")}>
+            <p className="text-bad text-sm font-medium">Error</p>
+            <p className="text-bad/80 mt-1 text-xs">{error}</p>
             <Button
               type="button"
               variant="light"

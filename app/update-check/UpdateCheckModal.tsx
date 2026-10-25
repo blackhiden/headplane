@@ -34,7 +34,7 @@ export default function UpdateCheckModal() {
       <DialogPanel variant="unactionable">
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Updates Available</h2>
-          <p className="text-sm text-mist-600 dark:text-mist-400">
+          <p className="text-muted text-sm">
             New commits are available for the following projects:
           </p>
 
@@ -43,7 +43,7 @@ export default function UpdateCheckModal() {
             {ctx.headscaleUpdate && <UpdateCard result={ctx.headscaleUpdate} />}
           </div>
 
-          <p className="text-xs text-mist-500 dark:text-mist-400">
+          <p className="text-faint text-xs">
             Checked automatically on page load. You can also check manually from the user menu at
             any time.
           </p>
@@ -76,14 +76,12 @@ export default function UpdateCheckModal() {
 
 function UpdateCard({ result }: { result: UpdateCheckResult }) {
   return (
-    <div className="rounded-lg border border-mist-200 bg-mist-50 p-3 dark:border-mist-700 dark:bg-mist-800/50">
+    <div className="border-line bg-subtle rounded-lg border p-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">{result.projectName}</h3>
-        <span className="text-xs text-mist-500 dark:text-mist-400">
+        <span className="text-muted text-xs">
           {result.currentCommit} →{" "}
-          <span className="font-mono text-indigo-600 dark:text-indigo-400">
-            {result.remoteCommit}
-          </span>
+          <span className="text-accent font-mono">{result.remoteCommit}</span>
         </span>
       </div>
       <div className="mt-2 flex items-center gap-2">
@@ -97,7 +95,7 @@ function UpdateCard({ result }: { result: UpdateCheckResult }) {
             View changes
           </span>
         </Link>
-        <span className="text-xs text-mist-400 dark:text-mist-500">·</span>
+        <span className="text-faint text-xs">·</span>
         {result.releaseUrl ? (
           <Link external styled to={result.releaseUrl}>
             <span className="flex items-center gap-1">
@@ -131,14 +129,14 @@ export function UpdateCheckPill() {
       type="button"
       onClick={() => ctx.checkNow("manual")}
       disabled={ctx.isChecking}
-      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-mist-100 focus:ring-2 focus:ring-indigo-500/40 focus:outline-hidden dark:hover:bg-mist-800"
+      className="hover:bg-subtle focus:ring-accent/40 inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus:ring-2 focus:outline-hidden"
     >
       <RefreshCw className={`size-4 ${ctx.isChecking ? "animate-spin" : ""}`} />
       <span className="flex-1 text-left">
         {ctx.isChecking ? "Checking for updates..." : "Check for Updates"}
       </span>
       {count > 0 && (
-        <span className="inline-flex size-5 items-center justify-center rounded-full bg-indigo-500 text-xs font-semibold text-white">
+        <span className="bg-accent text-accent-fg inline-flex size-5 items-center justify-center rounded-full text-xs font-semibold">
           {count}
         </span>
       )}

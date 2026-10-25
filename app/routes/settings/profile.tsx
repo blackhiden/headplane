@@ -184,8 +184,8 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
         <Card.Text>Your account details and identity.</Card.Text>
         <div className="mt-4 flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-mist-700 dark:text-mist-300">Username:</span>
-            <span className="rounded-md bg-mist-100 px-3 py-1 font-mono text-sm dark:bg-mist-800">
+            <span className="font-medium">Username:</span>
+            <span className="bg-subtle rounded-md px-3 py-1 font-mono text-sm">
               {loaderData.username}
             </span>
           </div>
@@ -214,7 +214,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Username */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">Username</label>
+            <label className="text-sm font-medium">Username</label>
             <Text className="text-sm">Your administrator username for logging into Headplane.</Text>
             <Input
               name="username"
@@ -227,9 +227,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Display Name */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">
-              Display Name (Optional)
-            </label>
+            <label className="text-sm font-medium">Display Name (Optional)</label>
             <Text className="text-sm">
               A friendly name to display in the UI. If not set, your username is shown.
             </Text>
@@ -243,9 +241,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Avatar URL */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">
-              Avatar URL (Optional)
-            </label>
+            <label className="text-sm font-medium">Avatar URL (Optional)</label>
             <Text className="text-sm">
               A profile picture URL (HTTPS only). Leave empty to use the default avatar.
             </Text>
@@ -259,9 +255,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* API Key */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">
-              Headscale API Key
-            </label>
+            <label className="text-sm font-medium">Headscale API Key</label>
             <Text className="text-sm">
               Store your Headscale API key to avoid re-entering it at each login. The key is
               encrypted at rest.
@@ -277,7 +271,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
               <button
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -286,11 +280,11 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Theme */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">Theme</label>
+            <label className="text-sm font-medium">Theme</label>
             <select
               name="theme"
               defaultValue={loaderData.settings.theme}
-              className="rounded-md border border-mist-300 bg-white px-3 py-2 text-sm dark:border-mist-700 dark:bg-mist-800"
+              className="border-line-strong bg-surface rounded-md border px-3 py-2 text-sm"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -326,9 +320,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Current Password */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">
-              Current Password
-            </label>
+            <label className="text-sm font-medium">Current Password</label>
             <div className="relative">
               <Input
                 name="current_password"
@@ -340,7 +332,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
               <button
                 type="button"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -349,9 +341,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* New Password */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">
-              New Password
-            </label>
+            <label className="text-sm font-medium">New Password</label>
             <div className="relative">
               <Input
                 name="new_password"
@@ -364,7 +354,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -373,9 +363,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Confirm Password */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-mist-700 dark:text-mist-300">
-              Confirm New Password
-            </label>
+            <label className="text-sm font-medium">Confirm New Password</label>
             <div className="relative">
               <Input
                 name="confirm_password"
@@ -388,7 +376,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-mist-600 hover:text-mist-900 dark:text-mist-400 dark:hover:text-mist-100"
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>

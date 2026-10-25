@@ -68,29 +68,29 @@ export default function Page({ loaderData }: Route.ComponentProps) {
       ) : (
         <>
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-lg border border-mist-200 bg-white p-4 dark:border-mist-800 dark:bg-mist-900/50">
-              <div className="flex items-center gap-2 text-sm text-mist-500">
+            <div className="border-line bg-surface rounded-lg border p-4">
+              <div className="text-muted flex items-center gap-2 text-sm">
                 <Globe className="h-4 w-4" />
                 Status
               </div>
               <p
                 className={cn(
                   "mt-1 text-lg font-semibold",
-                  derp.configured ? "text-green-600 dark:text-green-400" : "text-mist-500",
+                  derp.configured ? "text-ok" : "text-faint",
                 )}
               >
                 {derp.configured ? "Configured" : "Not configured"}
               </p>
             </div>
-            <div className="rounded-lg border border-mist-200 bg-white p-4 dark:border-mist-800 dark:bg-mist-900/50">
-              <div className="flex items-center gap-2 text-sm text-mist-500">
+            <div className="border-line bg-surface rounded-lg border p-4">
+              <div className="text-muted flex items-center gap-2 text-sm">
                 <Server className="h-4 w-4" />
                 Regions
               </div>
               <p className="mt-1 text-lg font-semibold">{derp.totalRegions}</p>
             </div>
-            <div className="rounded-lg border border-mist-200 bg-white p-4 dark:border-mist-800 dark:bg-mist-900/50">
-              <div className="flex items-center gap-2 text-sm text-mist-500">
+            <div className="border-line bg-surface rounded-lg border p-4">
+              <div className="text-muted flex items-center gap-2 text-sm">
                 <Server className="h-4 w-4" />
                 Headscale Version
               </div>
@@ -106,21 +106,18 @@ export default function Page({ loaderData }: Route.ComponentProps) {
           ) : (
             <div className="flex flex-col gap-6">
               {derp.regions.map((region) => (
-                <div
-                  className="rounded-lg border border-mist-200 bg-white dark:border-mist-800 dark:bg-mist-900/50"
-                  key={region.regionId}
-                >
-                  <div className="border-b border-mist-200 px-4 py-3 dark:border-mist-800">
+                <div className="border-line bg-surface rounded-lg border" key={region.regionId}>
+                  <div className="border-line border-b px-4 py-3">
                     <h2 className="flex items-center gap-2 text-lg font-medium">
-                      <Globe className="h-5 w-5 text-indigo-500" />
+                      <Globe className="text-accent h-5 w-5" />
                       {region.regionName}
-                      <span className="rounded-md bg-mist-100 px-2 py-0.5 font-mono text-xs text-mist-600 dark:bg-mist-800 dark:text-mist-400">
+                      <span className="bg-subtle text-muted rounded-md px-2 py-0.5 font-mono text-xs">
                         ID: {region.regionId}
                       </span>
                       <Chip text={region.regionCode} />
                     </h2>
                   </div>
-                  <div className="divide-y divide-mist-100 dark:divide-mist-800">
+                  <div className="divide-line divide-y">
                     {region.nodes.map((node) => (
                       <div
                         className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
@@ -128,26 +125,26 @@ export default function Page({ loaderData }: Route.ComponentProps) {
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">{node.name}</span>
-                          <span className="text-sm text-mist-500">{node.hostName}</span>
+                          <span className="text-muted text-sm">{node.hostName}</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {node.derpPort > 0 ? (
-                            <span className="rounded-md bg-mist-100 px-2 py-0.5 font-mono text-xs dark:bg-mist-800">
+                            <span className="bg-subtle rounded-md px-2 py-0.5 font-mono text-xs">
                               DERP port: {node.derpPort}
                             </span>
                           ) : null}
                           {node.stunPort > 0 ? (
-                            <span className="rounded-md bg-mist-100 px-2 py-0.5 font-mono text-xs dark:bg-mist-800">
+                            <span className="bg-subtle rounded-md px-2 py-0.5 font-mono text-xs">
                               STUN port: {node.stunPort}
                             </span>
                           ) : null}
                           {node.ipv4 ? (
-                            <span className="rounded-md bg-blue-50 px-2 py-0.5 font-mono text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                            <span className="bg-accent-subtle text-accent rounded-md px-2 py-0.5 font-mono text-xs">
                               {node.ipv4}
                             </span>
                           ) : null}
                           {node.ipv6 ? (
-                            <span className="rounded-md bg-blue-50 px-2 py-0.5 font-mono text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                            <span className="bg-accent-subtle text-accent rounded-md px-2 py-0.5 font-mono text-xs">
                               {node.ipv6}
                             </span>
                           ) : null}

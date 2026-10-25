@@ -133,14 +133,14 @@ export function AuditLogContent({
           placeholder="Filter by actor..."
           value={actorName ?? ""}
         />
-        <span className="ml-auto text-sm whitespace-nowrap text-mist-500">
+        <span className="text-faint ml-auto text-sm whitespace-nowrap">
           {total} {total === 1 ? "entry" : "entries"}
         </span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-160 table-auto rounded-lg">
-          <thead className="text-mist-600 dark:text-mist-300">
+          <thead className="text-muted">
             <tr className="px-0.5 text-left">
               <th className="pb-2 text-xs font-bold uppercase">Time</th>
               <th className="pb-2 text-xs font-bold uppercase">Actor</th>
@@ -149,7 +149,7 @@ export function AuditLogContent({
               <th className="pb-2 text-xs font-bold uppercase">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-mist-100 border-t border-mist-100 align-top dark:divide-mist-800 dark:border-mist-800">
+          <tbody className="divide-line border-line divide-y border-t align-top">
             {records.length === 0 ? (
               <tr>
                 <td colSpan={5}>
@@ -177,7 +177,7 @@ export function AuditLogContent({
               </tr>
             ) : (
               records.map((entry) => (
-                <tr className="hover:bg-mist-100 dark:hover:bg-mist-800" key={entry.id}>
+                <tr className="hover:bg-subtle" key={entry.id}>
                   <td className="py-2 text-sm whitespace-nowrap" suppressHydrationWarning>
                     {entry.createdAt.toLocaleString()}
                   </td>
@@ -203,14 +203,14 @@ export function AuditLogContent({
 
       {totalPages > 1 ? (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-mist-500">
+          <p className="text-faint text-sm">
             Page {page} of {totalPages}
           </p>
           <div className="flex items-center gap-2">
             <button
               className={cn(
-                "flex items-center gap-1 rounded-md border border-mist-200 px-3 py-1.5 text-sm font-medium",
-                "hover:bg-mist-50 dark:border-mist-700 dark:bg-mist-800/50 dark:hover:bg-mist-700/50",
+                "flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium",
+                "hover:bg-subtle",
                 page <= 1 && "pointer-events-none opacity-50",
               )}
               disabled={page <= 1}
@@ -222,8 +222,8 @@ export function AuditLogContent({
             </button>
             <button
               className={cn(
-                "flex items-center gap-1 rounded-md border border-mist-200 px-3 py-1.5 text-sm font-medium",
-                "hover:bg-mist-50 dark:border-mist-700 dark:bg-mist-800/50 dark:hover:bg-mist-700/50",
+                "flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium",
+                "hover:bg-subtle",
                 page >= totalPages && "pointer-events-none opacity-50",
               )}
               disabled={page >= totalPages}
@@ -256,9 +256,7 @@ function AuditDetailsDialog({ entry, onClose }: { entry: AuditEntry; onClose: ()
         <div className="flex flex-col gap-3">
           <div>
             <h2 className="text-lg font-semibold">Audit entry details</h2>
-            <p className="mt-1 text-sm text-mist-600 dark:text-mist-300">
-              {ACTION_LABELS[entry.action] ?? entry.action}
-            </p>
+            <p className="text-muted mt-1 text-sm">{ACTION_LABELS[entry.action] ?? entry.action}</p>
           </div>
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
             <dt className="font-medium">Actor</dt>
@@ -272,11 +270,11 @@ function AuditDetailsDialog({ entry, onClose }: { entry: AuditEntry; onClose: ()
             <dd>{entry.createdAt.toLocaleString()}</dd>
           </dl>
           {entry.details ? (
-            <pre className="max-h-96 overflow-auto rounded-md bg-mist-100 p-3 font-mono text-xs whitespace-pre-wrap dark:bg-mist-800">
+            <pre className="bg-subtle max-h-96 overflow-auto rounded-md p-3 font-mono text-xs whitespace-pre-wrap">
               {JSON.stringify(entry.details, null, 2)}
             </pre>
           ) : (
-            <p className="text-sm text-mist-600 dark:text-mist-300">
+            <p className="text-muted text-sm">
               No additional details were recorded for this action.
             </p>
           )}

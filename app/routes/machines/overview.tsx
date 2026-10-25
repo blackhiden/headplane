@@ -303,10 +303,10 @@ export default function Page({ loaderData }: Route.ComponentProps) {
   const scanQRClassName = cn(
     "inline-flex w-fit items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm",
     "transition-colors duration-100 active:scale-[0.98]",
-    "focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40 focus:ring-offset-1",
-    "dark:focus:ring-indigo-400/40 dark:focus:ring-offset-mist-900",
-    "border border-mist-200 bg-white font-medium hover:bg-mist-50",
-    "dark:border-mist-700 dark:bg-mist-800/50 dark:hover:bg-mist-700/50",
+    "focus:outline-hidden focus:ring-2 focus:ring-accent/40 focus:ring-offset-1",
+    "dark:focus:ring-accent/40 dark:focus:ring-offset-canvas",
+    "border border-line bg-surface font-medium hover:bg-subtle",
+    "dark:border-line-strong dark:bg-raised/50 dark:hover:bg-hover",
     !loaderData.writable && "pointer-events-none opacity-50",
   );
 
@@ -391,9 +391,8 @@ export default function Page({ loaderData }: Route.ComponentProps) {
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2",
                 "p-1 rounded-full",
-                "text-mist-400 hover:text-mist-600",
-                "dark:text-mist-500 dark:hover:text-mist-300",
-                "hover:bg-mist-100 dark:hover:bg-mist-800",
+                "text-faint hover:text-muted",
+                "hover:bg-subtle",
               )}
               onClick={clearSearch}
               type="button"
@@ -403,7 +402,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
           )}
         </div>
         <MachineFilters users={loaderData.users} populatedNodes={loaderData.populatedNodes} />
-        <span className="ml-auto text-sm whitespace-nowrap text-mist-500">
+        <span className="text-faint ml-auto text-sm whitespace-nowrap">
           {searchQuery || hasActiveFilters
             ? `Showing ${filteredAndSortedNodes.length} of ${loaderData.populatedNodes.length} machines`
             : `${loaderData.populatedNodes.length} machines`}
@@ -418,7 +417,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
       />
       <div className="overflow-x-auto">
         <table className="w-full min-w-160 table-auto rounded-lg">
-          <thead className="text-mist-600 dark:text-mist-300">
+          <thead className="text-muted">
             <tr className="px-0.5 text-left">
               <th className="w-10 pb-2">
                 <input
@@ -427,7 +426,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
                     filteredAndSortedNodes.length > 0 &&
                     filteredAndSortedNodes.every((n) => selectedIds.has(n.id))
                   }
-                  className="h-4 w-4 cursor-pointer rounded border-mist-300 text-indigo-600 focus:ring-indigo-500 dark:border-mist-600 dark:bg-mist-800"
+                  className="border-line-strong text-accent focus:ring-accent/40 dark:bg-surface h-4 w-4 cursor-pointer rounded"
                   onChange={toggleSelectAll}
                   type="checkbox"
                 />
@@ -444,10 +443,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
               >
                 <button
                   aria-label="Sort by name"
-                  className={cn(
-                    "flex items-center gap-x-1 cursor-pointer",
-                    "hover:text-mist-900 dark:hover:text-mist-100",
-                  )}
+                  className={cn("flex items-center gap-x-1 cursor-pointer", "hover:text-fg")}
                   onClick={() => handleSort("name")}
                   type="button"
                 >
@@ -475,7 +471,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
                     aria-label="Sort by IP address"
                     className={cn(
                       "flex items-center gap-x-1 cursor-pointer uppercase text-xs font-bold",
-                      "hover:text-mist-900 dark:hover:text-mist-100",
+                      "hover:text-fg",
                     )}
                     onClick={() => handleSort("ip")}
                     type="button"
@@ -520,10 +516,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
                 >
                   <button
                     aria-label="Sort by version"
-                    className={cn(
-                      "flex items-center gap-x-1 cursor-pointer",
-                      "hover:text-mist-900 dark:hover:text-mist-100",
-                    )}
+                    className={cn("flex items-center gap-x-1 cursor-pointer", "hover:text-fg")}
                     onClick={() => handleSort("version")}
                     type="button"
                   >
@@ -549,10 +542,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
               >
                 <button
                   aria-label="Sort by last seen"
-                  className={cn(
-                    "flex items-center gap-x-1 cursor-pointer",
-                    "hover:text-mist-900 dark:hover:text-mist-100",
-                  )}
+                  className={cn("flex items-center gap-x-1 cursor-pointer", "hover:text-fg")}
                   onClick={() => handleSort("lastSeen")}
                   type="button"
                 >
@@ -570,12 +560,7 @@ export default function Page({ loaderData }: Route.ComponentProps) {
               </th>
             </tr>
           </thead>
-          <tbody
-            className={cn(
-              "divide-y divide-mist-100 dark:divide-mist-800 align-top",
-              "border-t border-mist-100 dark:border-mist-800",
-            )}
-          >
+          <tbody className={cn("divide-y divide-line align-top", "border-t border-line")}>
             {filteredAndSortedNodes.length === 0 ? (
               <tr>
                 <td colSpan={loaderData.agent !== undefined ? 7 : 6}>

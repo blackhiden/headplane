@@ -66,7 +66,7 @@ export default function HeadscaleUserMenu({
       <Menu>
         <MenuTrigger
           aria-label={`Actions for ${user.displayName || user.name}`}
-          className="w-10 rounded-full bg-transparent p-1 py-0.5 hover:bg-mist-100 dark:hover:bg-mist-800"
+          className="hover:bg-subtle w-10 rounded-full bg-transparent p-1 py-0.5"
         >
           <Ellipsis className="h-5" />
         </MenuTrigger>

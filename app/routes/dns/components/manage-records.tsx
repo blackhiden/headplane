@@ -37,7 +37,7 @@ export default function ManageRecords({ records, isDisabled }: Props) {
                   <p
                     className={cn(
                       "font-mono text-sm font-bold py-1 px-2 rounded-md text-center",
-                      "bg-mist-100 dark:bg-mist-700/30 min-w-12",
+                      "bg-subtle min-w-12",
                     )}
                   >
                     {record.type}
@@ -54,7 +54,7 @@ export default function ManageRecords({ records, isDisabled }: Props) {
                   <input name="record_name" type="hidden" value={record.name} />
                   <input name="record_type" type="hidden" value={record.type} />
                   <Button
-                    className={cn("px-2 py-1 rounded-md", "text-red-500 dark:text-red-400")}
+                    className={cn("px-2 py-1 rounded-md", "text-bad")}
                     disabled={isDisabled}
                     type="submit"
                   >

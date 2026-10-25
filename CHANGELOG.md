@@ -1,5 +1,22 @@
 # Next
 
+## Changes
+
+- Beautified the UI/UX across all pages by replacing hardcoded Tailwind color
+  classes with the design system's semantic tokens (canvas, surface, raised,
+  subtle, hover, line, fg, muted, faint, accent, ok, warn, bad, danger). This
+  makes the interface more consistent, theme-aware, and maintainable.
+- The header is now sticky with a backdrop blur, and the active navigation tab
+  uses a subtle pill background instead of an underline indicator.
+- The footer now uses a backdrop blur and a cleaner version/URL display.
+- Buttons, dialogs, links, empty states, loading spinners, and error states now
+  consistently use the design system tokens for colors, borders, and shadows.
+- Toasts now show a type-specific icon (info, success, or error) with matching
+  accent colors.
+- The login page, machines, DERP, routes, settings, topology, audit, instances,
+  users, and admin pages all use the design system tokens for consistent
+  theming across light and dark modes.
+
 ## Fixes
 
 - Fixed the Audit Log page crashing with `ReferenceError: props is not defined`.

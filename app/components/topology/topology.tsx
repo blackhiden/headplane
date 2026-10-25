@@ -102,7 +102,7 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
   );
 
   return (
-    <div className="shadow-surface relative overflow-hidden rounded-xl border border-mist-200 bg-gradient-to-br from-white via-mist-50/60 to-mist-100/50 dark:border-mist-800 dark:from-mist-900/70 dark:via-mist-900/40 dark:to-mist-950/70">
+    <div className="shadow-surface border-line from-surface via-subtle/60 to-subtle relative overflow-hidden rounded-xl border bg-gradient-to-br">
       <div aria-hidden="true" className="topology-dot-grid pointer-events-none absolute inset-0" />
       <svg
         className="relative h-[600px] w-full cursor-grab touch-none select-none active:cursor-grabbing"
@@ -160,8 +160,8 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
                 className={cn(
                   "transition-colors duration-200",
                   edge.kind === "subnet"
-                    ? "animate-dash-flow stroke-mist-400/80 dark:stroke-mist-500/80"
-                    : "stroke-mist-300 dark:stroke-mist-700",
+                    ? "animate-dash-flow stroke-muted/80"
+                    : "stroke-line-strong",
                 )}
                 d={edgePath(from, to)}
                 fill="none"
@@ -186,7 +186,7 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
             return (
               <g key={group}>
                 <rect
-                  className="fill-mist-100/90 dark:fill-mist-800/70"
+                  className="fill-subtle/90"
                   height={22}
                   rx={11}
                   width={pillWidth}
@@ -194,7 +194,7 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
                   y={y - 57}
                 />
                 <text
-                  className="fill-mist-600 text-xs font-semibold tracking-wide uppercase dark:fill-mist-300"
+                  className="fill-muted text-xs font-semibold tracking-wide uppercase"
                   textAnchor="middle"
                   x={cx}
                   y={y - 42}
@@ -262,10 +262,7 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
                 {/* Online indicator */}
                 {!isSubnet ? (
                   <circle
-                    className={cn(
-                      "stroke-white dark:stroke-mist-900",
-                      node.isOnline ? "fill-green-500" : "fill-mist-300 dark:fill-mist-600",
-                    )}
+                    className={cn("stroke-surface", node.isOnline ? "fill-ok" : "fill-line-strong")}
                     cx={radius - 6}
                     cy={radius - 6}
                     r={5}
@@ -275,10 +272,7 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
 
                 {/* Label */}
                 <text
-                  className={cn(
-                    "fill-mist-700 text-xs dark:fill-mist-200",
-                    isSubnet && "font-mono",
-                  )}
+                  className={cn("fill-muted text-xs", isSubnet && "font-mono")}
                   textAnchor="middle"
                   y={radius + 16}
                 >
@@ -293,7 +287,7 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
       {/* Hover tooltip */}
       {hovered && cursor ? (
         <div
-          className="shadow-overlay pointer-events-none fixed z-50 w-56 rounded-xl border border-mist-200 bg-white/95 p-3 text-sm backdrop-blur-sm dark:border-mist-800 dark:bg-mist-950/95"
+          className="shadow-overlay border-line bg-surface/95 pointer-events-none fixed z-50 w-56 rounded-xl border p-3 text-sm backdrop-blur-sm"
           style={{ left: cursor.x + 12, top: cursor.y + 12 }}
         >
           <div className="flex items-center gap-2">
@@ -306,28 +300,24 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
           <p className="mt-0.5 text-xs opacity-60">{hovered.group}</p>
           <div className="mt-2 flex flex-wrap gap-1">
             {hovered.kind === "subnet" ? (
-              <span className="rounded-md bg-mist-100 px-1.5 py-0.5 text-xs dark:bg-mist-800">
-                Subnet route
-              </span>
+              <span className="bg-subtle rounded-md px-1.5 py-0.5 text-xs">Subnet route</span>
             ) : (
               <>
                 <span
                   className={cn(
                     "rounded-md px-1.5 py-0.5 text-xs",
-                    hovered.isOnline
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                      : "bg-mist-100 text-mist-600 dark:bg-mist-800 dark:text-mist-400",
+                    hovered.isOnline ? "bg-ok-subtle text-ok" : "bg-subtle text-muted",
                   )}
                 >
                   {hovered.isOnline ? "Online" : "Offline"}
                 </span>
                 {hovered.isExitNode ? (
-                  <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                  <span className="bg-warn-subtle text-warn rounded-md px-1.5 py-0.5 text-xs">
                     Exit node
                   </span>
                 ) : null}
                 {hovered.isExpired ? (
-                  <span className="rounded-md bg-red-50 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                  <span className="bg-bad-subtle text-bad rounded-md px-1.5 py-0.5 text-xs">
                     Expired
                   </span>
                 ) : null}
@@ -338,28 +328,28 @@ export default function Topology({ graph, onNodeClick }: TopologyProps) {
       ) : null}
 
       {/* Zoom controls */}
-      <div className="shadow-overlay absolute right-3 bottom-3 flex flex-col overflow-hidden rounded-lg border border-mist-200/80 bg-white/80 backdrop-blur-md dark:border-mist-700/60 dark:bg-mist-900/70">
+      <div className="shadow-overlay border-line/80 bg-surface/80 absolute right-3 bottom-3 flex flex-col overflow-hidden rounded-lg border backdrop-blur-md">
         <button
           aria-label="Zoom in"
-          className="flex h-9 w-9 items-center justify-center text-lg font-medium text-mist-600 transition-colors hover:bg-mist-100 hover:text-mist-900 dark:text-mist-300 dark:hover:bg-mist-800 dark:hover:text-white"
+          className="text-muted hover:bg-subtle hover:text-fg flex h-9 w-9 items-center justify-center text-lg font-medium transition-colors"
           onClick={() => setView((v) => ({ ...v, scale: Math.min(MAX_SCALE, v.scale * 1.2) }))}
           type="button"
         >
           +
         </button>
-        <div className="h-px bg-mist-200 dark:bg-mist-700" />
+        <div className="bg-line h-px" />
         <button
           aria-label="Zoom out"
-          className="flex h-9 w-9 items-center justify-center text-lg font-medium text-mist-600 transition-colors hover:bg-mist-100 hover:text-mist-900 dark:text-mist-300 dark:hover:bg-mist-800 dark:hover:text-white"
+          className="text-muted hover:bg-subtle hover:text-fg flex h-9 w-9 items-center justify-center text-lg font-medium transition-colors"
           onClick={() => setView((v) => ({ ...v, scale: Math.max(MIN_SCALE, v.scale / 1.2) }))}
           type="button"
         >
           −
         </button>
-        <div className="h-px bg-mist-200 dark:bg-mist-700" />
+        <div className="bg-line h-px" />
         <button
           aria-label="Reset view"
-          className="flex h-9 w-9 items-center justify-center text-xs font-medium text-mist-600 transition-colors hover:bg-mist-100 hover:text-mist-900 dark:text-mist-300 dark:hover:bg-mist-800 dark:hover:text-white"
+          className="text-muted hover:bg-subtle hover:text-fg flex h-9 w-9 items-center justify-center text-xs font-medium transition-colors"
           onClick={() => setView({ scale: 1, tx: 40, ty: 40 })}
           type="button"
         >
