@@ -51,15 +51,15 @@ export default function Page({
         <Card.Title>Server</Card.Title>
         <Card.Text>The Headscale server this Headplane instance is connected to.</Card.Text>
         <div className="mt-3 flex items-center gap-2">
-          <Server className="h-4 w-4 text-mist-500" />
-          <span className="text-sm text-mist-600 dark:text-mist-300">Headscale version:</span>
-          <span className="rounded-md bg-mist-100 px-2 py-0.5 font-mono text-sm dark:bg-mist-800">
+          <Server className="text-faint h-4 w-4" />
+          <span className="text-muted text-sm">Headscale version:</span>
+          <span className="bg-subtle rounded-md px-2 py-0.5 font-mono text-sm">
             {compatibility.serverVersion}
           </span>
         </div>
         {compatibility.unsupported.length > 0 ? (
           <div className="mt-4">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-300">
+            <p className="text-warn mb-2 flex items-center gap-1.5 text-sm font-medium">
               <TriangleAlert className="h-4 w-4" />
               Features unavailable on this server version
             </p>
@@ -74,7 +74,7 @@ export default function Page({
             </ul>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-green-600 dark:text-green-400">
+          <p className="text-ok mt-3 text-sm">
             All Headplane features are supported by this server version.
           </p>
         )}

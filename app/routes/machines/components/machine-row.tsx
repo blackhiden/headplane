@@ -59,13 +59,13 @@ export default function MachineRow({
   }, [magic, node.ipAddresses]);
 
   return (
-    <tr className="group hover:bg-mist-100 dark:hover:bg-mist-800" key={node.id}>
+    <tr className="group hover:bg-subtle" key={node.id}>
       {onToggleSelect ? (
         <td className="py-2 pl-2">
           <input
             aria-label={`Select ${node.givenName}`}
             checked={isSelected ?? false}
-            className="h-4 w-4 cursor-pointer rounded border-mist-300 text-indigo-600 focus:ring-indigo-500 dark:border-mist-600 dark:bg-mist-800"
+            className="border-line-strong text-accent focus:ring-accent/40 dark:bg-surface h-4 w-4 cursor-pointer rounded"
             onChange={() => onToggleSelect(node.id)}
             type="checkbox"
           />
@@ -73,13 +73,7 @@ export default function MachineRow({
       ) : undefined}
       <td className="py-2 pl-2 focus-within:ring-3">
         <Link className={cn("group/link h-full focus:outline-hidden")} to={`/machines/${node.id}`}>
-          <p
-            className={cn(
-              "font-semibold leading-snug",
-              "group-hover/link:text-blue-600",
-              "dark:group-hover/link:text-blue-400",
-            )}
-          >
+          <p className={cn("font-semibold leading-snug", "group-hover/link:text-accent")}>
             {node.givenName}
           </p>
           <p className="text-sm opacity-50">
@@ -99,7 +93,7 @@ export default function MachineRow({
           <Menu>
             <MenuTrigger
               aria-label={`Copy addresses for ${node.givenName}`}
-              className="rounded-full bg-transparent p-1 hover:bg-mist-100 dark:hover:bg-mist-800"
+              className="hover:bg-subtle rounded-full bg-transparent p-1"
             >
               <ChevronDown className="h-4 w-4" />
             </MenuTrigger>
@@ -147,10 +141,7 @@ export default function MachineRow({
         <div className="flex items-start gap-x-1">
           <StatusCircle className="mt-0.5 h-4 w-4" isOnline={node.online && !node.expired} />
           <div>
-            <p
-              className={cn("text-sm", "text-mist-600 dark:text-mist-300")}
-              suppressHydrationWarning
-            >
+            <p className={cn("text-sm", "text-muted")} suppressHydrationWarning>
               {node.online && !node.expired
                 ? "Connected"
                 : new Date(node.lastSeen).toLocaleString()}

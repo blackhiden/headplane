@@ -8,10 +8,7 @@ export interface StatusCircleProps {
 export default function StatusCircle({ isOnline, className }: StatusCircleProps) {
   return (
     <svg
-      className={cn(
-        isOnline ? "text-green-600 dark:text-green-500" : "text-mist-200 dark:text-mist-800",
-        className,
-      )}
+      className={cn(isOnline ? "text-ok" : "text-line-strong", className)}
       role="img"
       viewBox="0 0 24 24"
       fill="currentColor"

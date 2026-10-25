@@ -123,7 +123,7 @@ function ApiKeyTable({ apiKeys, isServiceKey, onDelete }: ApiKeyTableProps) {
   return (
     <div className="mt-6 overflow-x-auto">
       <table className="w-full min-w-[640px] table-auto">
-        <thead className="text-mist-600 dark:text-mist-300">
+        <thead className="text-muted">
           <tr className="text-left">
             <th className="pb-2 text-xs font-bold uppercase">Prefix</th>
             <th className="pb-2 text-xs font-bold uppercase">Created</th>
@@ -133,26 +133,24 @@ function ApiKeyTable({ apiKeys, isServiceKey, onDelete }: ApiKeyTableProps) {
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-mist-100 border-t border-mist-100 dark:divide-mist-800 dark:border-mist-800">
+        <tbody className="divide-line border-line divide-y border-t">
           {apiKeys.map((key) => (
-            <tr key={key.id} className="group hover:bg-mist-100 dark:hover:bg-mist-800">
+            <tr key={key.id} className="group hover:bg-subtle">
               <td className="py-3 pl-2">
                 <div className="flex items-center gap-2">
                   <code className="text-sm">{key.prefix}</code>
                   {isServiceKey(key) && (
-                    <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                    <span className="bg-accent-subtle text-accent rounded px-2 py-0.5 text-xs font-medium">
                       Service Key
                     </span>
                   )}
                 </div>
               </td>
               <td className="py-3">
-                <p className="text-sm text-mist-600 dark:text-mist-300">
-                  {new Date(key.createdAt).toLocaleDateString()}
-                </p>
+                <p className="text-muted text-sm">{new Date(key.createdAt).toLocaleDateString()}</p>
               </td>
               <td className="py-3">
-                <p className="text-sm text-mist-600 dark:text-mist-300">
+                <p className="text-muted text-sm">
                   {key.expiration ? new Date(key.expiration).toLocaleDateString() : "Never"}
                 </p>
               </td>
@@ -216,7 +214,7 @@ function CreateApiKeyDialog({
               <input
                 value={newApiKey}
                 readOnly
-                className="flex-1 rounded-md border border-mist-200 bg-white px-3 py-2 font-mono text-sm dark:border-mist-800 dark:bg-mist-900"
+                className="border-line bg-surface flex-1 rounded-md border px-3 py-2 font-mono text-sm"
               />
               <Button onClick={copyToClipboard} variant="light" type="button">
                 <Copy className="h-4 w-4" />
@@ -254,11 +252,9 @@ function CreateApiKeyDialog({
             onChange={(e) => setExpirationDays(Number(e.target.value))}
             min={1}
             max={3650}
-            className="w-full rounded-md border border-mist-200 bg-white px-3 py-2 text-sm dark:border-mist-800 dark:bg-mist-900"
+            className="border-line bg-surface w-full rounded-md border px-3 py-2 text-sm"
           />
-          <p className="mt-1 text-xs text-mist-600 dark:text-mist-400">
-            Key will expire in {expirationDays} days
-          </p>
+          <p className="text-faint mt-1 text-xs">Key will expire in {expirationDays} days</p>
         </div>
       </DialogPanel>
     </Dialog>
@@ -291,7 +287,7 @@ function DeleteApiKeyDialog({
         }}
       >
         <h2 className="text-xl font-semibold">Delete API Key</h2>
-        <p className="mt-2 text-sm text-mist-600 dark:text-mist-300">
+        <p className="text-muted mt-2 text-sm">
           Are you sure you want to delete the API key <code>{apiKey?.prefix}</code>? This action
           cannot be undone.
         </p>

@@ -51,22 +51,27 @@ export default function EmptyState({
   const Icon = icon ?? (variant === "error" ? <AlertCircle /> : <Inbox />);
 
   return (
-    <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center rounded-xl border border-dashed border-line px-6 py-16 text-center",
+        className,
+      )}
+    >
       <div
         className={cn(
-          "mb-4 flex h-12 w-12 items-center justify-center rounded-full",
-          variant === "error"
-            ? "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400"
-            : "bg-mist-100 text-mist-500 dark:bg-mist-800 dark:text-mist-400",
+          "mb-5 flex h-14 w-14 items-center justify-center rounded-2xl",
+          "border border-line bg-subtle",
+          "shadow-sm",
+          variant === "error" ? "bg-bad-subtle text-bad border-bad/20" : "bg-subtle text-muted",
         )}
         aria-hidden="true"
       >
-        {Icon}
+        <span className="[&>svg]:size-6">{Icon}</span>
       </div>
-      <h3 className="text-lg font-semibold text-mist-900 dark:text-white">{title}</h3>
-      <p className="mt-2 max-w-md text-sm text-mist-600 dark:text-mist-400">{description}</p>
+      <h3 className="text-lg font-semibold text-balance">{title}</h3>
+      <p className="text-muted mt-2 max-w-md text-sm text-balance">{description}</p>
       {(action || secondaryAction) && (
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           {action && (
             <Button variant={action.variant ?? "heavy"} onClick={action.onClick} {...action}>
               {action.label}

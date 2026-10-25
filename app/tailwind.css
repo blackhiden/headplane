@@ -132,6 +132,19 @@
   }
 }
 
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hp-line-strong) transparent;
+}
+
+@utility smooth-transition {
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
 @utility focus-within-ring {
   &:has(:focus-visible) {
     outline: 2px solid var(--hp-accent);
@@ -211,10 +224,21 @@
   }
 
   body {
-    @apply bg-canvas text-fg text-base;
+    @apply bg-canvas text-fg smooth-transition text-base;
     font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--hp-accent) 25%, transparent);
+    color: var(--hp-fg);
+  }
+
+  scroll-behavior: smooth;
+
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
   }
 
   ::-webkit-scrollbar {

@@ -16,12 +16,13 @@ export default function Footer({ isDebug, baseUrl }: FooterProps) {
     <footer
       className={cn(
         "fixed w-full bottom-0 left-0 z-20",
-        "bg-mist-50 dark:bg-mist-950",
-        "dark:border-t dark:border-mist-800",
+        "bg-canvas/90",
+        "backdrop-blur-md",
+        "border-t border-line",
       )}
     >
-      <div className="container flex items-center justify-between py-2">
-        <p className="text-xs">
+      <div className="container flex flex-wrap items-center justify-between gap-2 py-2">
+        <p className="text-muted text-xs">
           Headplane is free and open-source. Please consider{" "}
           <Link external styled to="https://tale.me/sponsor">
             sponsoring
@@ -32,18 +33,18 @@ export default function Footer({ isDebug, baseUrl }: FooterProps) {
           {isDebug && (
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 font-medium",
-                "bg-amber-100 text-amber-800",
-                "dark:bg-amber-900/50 dark:text-amber-300",
+                "inline-flex items-center rounded-full px-2 py-0.5 font-medium leading-none",
+                "bg-warn-subtle text-warn",
               )}
             >
               Debug
             </span>
           )}
-          <p className="text-mist-600 dark:text-mist-400">
-            {__VERSION__} &middot;{" "}
+          <p className="text-muted">
+            {__VERSION__}
+            <span className="mx-1.5 opacity-40">&middot;</span>
             {urlVisible ? (
-              <code>{baseUrl}</code>
+              <code className="bg-subtle rounded px-1 py-0.5 font-mono text-xs">{baseUrl}</code>
             ) : (
               <span aria-hidden="true">&bull;&bull;&bull;&bull;&bull;</span>
             )}
@@ -51,11 +52,9 @@ export default function Footer({ isDebug, baseUrl }: FooterProps) {
               type="button"
               aria-label={urlVisible ? "Hide server URL" : "Show server URL"}
               className={cn(
-                "ml-1 inline-flex align-middle rounded-xs p-0.5",
-                "text-mist-400 hover:text-mist-600",
-                "dark:text-mist-500 dark:hover:text-mist-300",
-                "focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40 focus:ring-offset-1",
-                "dark:focus:ring-indigo-400/40 dark:focus:ring-offset-mist-900",
+                "ml-1 inline-flex align-middle rounded p-0.5 smooth-transition",
+                "text-muted hover:text-fg",
+                "focus:outline-hidden focus:ring-2 focus:ring-accent/40",
               )}
               onClick={() => setUrlVisible((v) => !v)}
             >
