@@ -31,3 +31,4 @@ session.md
 /blob-report/
 *.md
 !/SPECIFICATION.md
+merge-worktrees.sh
