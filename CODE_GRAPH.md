@@ -319,12 +319,28 @@ graph TD
 
 ---
 
-### UI Components & Go Components
+### UI Components, Hooks & Go Components
 
 #### [app/components/]
 
 - **Role:** Reusable UI components built with Base UI and TailwindCSS.
-- **Key Components:** Button, Dialog, Input, Select, Menu, Card, Chip, Notice, Tabs, etc.
+- **Key Components:** Button, Dialog, Input, Select, Menu, Card, Chip, Notice, Text, Title, Callout, ActionDialog, Tabs, etc.
+- **Recent Updates (Oct 2026):**
+  - Restored `Card.Title` and `Card.Text` subcomponents to fix login page crash.
+  - Added `Text` (muted paragraph) and `Title` (semibold heading) components.
+  - Added `Notice` as an alias for `Callout` with default "info" variant.
+  - `Callout` hardened with defensive fallback for unknown variants.
+  - `Select` hardened: added `aria-label` support, made `label` optional.
+  - `ActionDialog` fixed to always use `Dialog` root (removed invalid AlertDialog namespace usage).
+  - `Field` component: made label conditional to support `aria-label`-only usage.
+  - Migrated from hardcoded Tailwind colors to design system semantic color tokens.
+
+#### [app/hooks/]
+
+- **Role:** Shared React custom hooks.
+- **Key Hooks:**
+  - `useForm<T>({ schema, defaultValues, validate })` → Form state with arktype validation.
+  - `useMachineFilterParams()` → URL-persisted machine filters/sort/page.
 
 #### [app/utils/]
 
@@ -464,4 +480,4 @@ Agent (Go) → Join Tailnet → Periodic sync
 
 ---
 
-_Last updated: 2026-10-13 by AI agent during code graph generation._
+_Last updated: 2026-10-25 by AI agent (added hooks, new components, UI refactors, component hardening)._

@@ -58,6 +58,10 @@ headscale:
   api_key: "<headscale-api-key>"
 ```
 
+In single local administrator mode, you can also update the API key from the
+**Administration** page at `/admin` — the field is masked by default and
+Headplane must be restarted after saving for the change to take effect.
+
 Keep this key server-side. Do not put it in the browser, a public reverse-proxy
 configuration, or a client-side environment variable. If the issue persists,
 check the Headplane logs for `Live store: failed to poll nodes` or

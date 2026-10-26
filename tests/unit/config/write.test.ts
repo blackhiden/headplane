@@ -93,4 +93,31 @@ describe("configuration writer", () => {
     );
     expect(config.user).not.toHaveProperty("password_path");
   });
+
+  test("replaces api_key_path when writing a headscale api_key", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "headplane-config-apikey-"));
+    directories.push(directory);
+    const configPath = join(directory, "config.yaml");
+    await writeFile(
+      configPath,
+      [
+        "server:",
+        "  cookie_secret: abcdefghijklmnopqrstuvwxyz123456",
+        "headscale:",
+        "  url: http://localhost:8080",
+        "  api_key_path: /run/secrets/headscale-api-key",
+        "user:",
+        "  username: admin",
+        "  password: $2b$12$01234567890123456789012345678901234567890123456789012",
+      ].join("\n"),
+    );
+
+    await updateConfig(configPath, { headscale: { api_key: "new-service-key" } }, { backup: true });
+
+    const config = load(await readFile(configPath, "utf8")) as {
+      headscale: Record<string, string>;
+    };
+    expect(config.headscale.api_key).toBe("new-service-key");
+    expect(config.headscale).not.toHaveProperty("api_key_path");
+  });
 });

@@ -31,4 +31,7 @@ session.md
 /blob-report/
 *.md
 !/SPECIFICATION.md
+!/AGENT_INSTRUCTIONS.md
+!/INITIAL_PROMPT.md
+!/docs/development/parallel-worktrees.md
 merge-worktrees.sh
