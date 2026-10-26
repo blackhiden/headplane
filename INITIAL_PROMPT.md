@@ -1,13 +1,50 @@
-# Initial Prompt — Admin API Key Management UI
+# Initial Prompt — Phase 18: Frontend Admin Info Section UI (Headplane)
 
-You are tasked with implementing the "Admin API Key Management UI" feature for
-Headplane, as described in `docs/ROADMAP.md`.
+You are assigned to implement the frontend Admin Technical Info section for Phase 18 (Admin Technical Info Section).
 
-## Context
+## Instructions
 
-Headplane is a web UI for Headscale. The Headscale API key (`headscale.api_key`)
-is currently configured only via the YAML config file or environment variables.
-In single local-administrator mode, the admin UI at `/admin` provides password
+1. Read `/home/denny/Project/headscale-project/headplane-admin-techinfo-ui/AGENT_INSTRUCTIONS.md` in full.
+2. Change your working directory to: `/home/denny/Project/headscale-project/headplane-admin-techinfo-ui`
+3. Verify you are on branch: `feature/admin-techinfo-ui`
+4. Read the relevant project documentation:
+   - `docs/ROADMAP.md` (Phase 18 section, lines 1912-2100)
+   - `AGENTS.md` (project guidelines)
+   - `docs/ARCHITECTURE.md` (system architecture)
+5. Read the relevant source code before making changes:
+   - `app/routes/admin/route.tsx` (admin page)
+   - `app/routes/admin/components/api-key-management.tsx` (component pattern)
+   - `app/routes/api/admin/apikeys.ts` (admin API endpoint pattern)
+   - `app/server/headscale/api/index.ts` (Headscale client)
+   - `app/server/headscale/api/resources/derp.ts` (resource pattern)
+   - `app/components/card.tsx` (Card component)
+   - `app/server/config/integration/docker.ts` (Docker detection)
+   - `app/server/config/integration/proc.ts` (Proc detection)
+6. Implement the Admin Technical Info section as described in the instructions.
+7. Add tests for the new components and API endpoint.
+8. Run validation commands.
+9. Commit your work with the message: `admin: add technical info section to admin page`
+10. Report your commit SHA when complete.
+
+## Key Files
+
+- **Create:** `app/routes/api/admin/server-info.ts`
+- **Create:** `app/components/server-info-card.tsx`
+- **Create:** `app/routes/admin/components/technical-info-section.tsx`
+- **Create:** `app/server/headscale/api/resources/server-info.ts`
+- **Modify:** `app/routes/admin/route.tsx`
+- **Modify:** `app/server/headscale/api/index.ts`
+
+## Critical Constraints
+
+- Do NOT modify any files outside the scope listed above.
+- Do NOT modify the main headscale repo (only the headplane submodule).
+- Do NOT modify database schema or migrations.
+- Do NOT modify existing API endpoints or their behavior.
+- Follow the existing code conventions.
+- Use the existing design system and components.
+- No sensitive information (API keys, passwords, tokens, private keys) may be exposed.
+- The endpoint must require admin authentication.
 reset and Headscale API key management (create/delete), but there is no way to
 update the **configured service key** that Headplane itself uses to talk to
 Headscale.
