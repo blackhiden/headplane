@@ -95,6 +95,7 @@ const headscaleConfig = type({
     .pipe((v) => (v.endsWith("/") ? v.slice(0, -1) : v))
     .optional(),
   api_key: "string?",
+  api_key_path: "string?",
   config_path: "string?",
   config_strict: "boolean = true",
   dns_records_path: "string?",
@@ -109,6 +110,7 @@ const partialHeadscaleConfig = type({
     .pipe((v) => (v.endsWith("/") ? v.slice(0, -1) : v))
     .optional(),
   api_key: "string?",
+  api_key_path: "string?",
   config_path: "string?",
   config_strict: "boolean?",
   dns_records_path: "string?",

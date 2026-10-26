@@ -225,4 +225,45 @@ test.describe("Admin API Keys", () => {
     const keyValue = await keyInput.inputValue();
     expect(keyValue).toMatch(/^key_/);
   });
+
+  test("shows the Headscale API key management card", async ({ page, apiKey }) => {
+    // Login with API key
+    await page.goto("/admin/login");
+    await page.getByRole("button", { name: "API Key" }).click();
+    await page.getByPlaceholder("API Key").fill(apiKey);
+    await page.getByRole("button", { name: "Sign In" }).click();
+    await expect(page).toHaveURL(/\/machines/);
+
+    // Navigate to admin page
+    await page.goto("/admin");
+
+    // The Headscale API Key card should be visible
+    await expect(page.getByRole("heading", { name: "Headscale API Key" })).toBeVisible();
+    await expect(page.getByLabel("API Key")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save API Key" })).toBeVisible();
+  });
+
+  test("shows the API key field as masked by default", async ({ page, apiKey }) => {
+    // Login with API key
+    await page.goto("/admin/login");
+    await page.getByRole("button", { name: "API Key" }).click();
+    await page.getByPlaceholder("API Key").fill(apiKey);
+    await page.getByRole("button", { name: "Sign In" }).click();
+    await expect(page).toHaveURL(/\/machines/);
+
+    // Navigate to admin page
+    await page.goto("/admin");
+
+    // The API key input should be type=password by default
+    const apiKeyInput = page.getByLabel("API Key");
+    await expect(apiKeyInput).toHaveAttribute("type", "password");
+
+    // Click the show/hide toggle
+    await page.getByRole("button", { name: "Show API key" }).click();
+    await expect(apiKeyInput).toHaveAttribute("type", "text");
+
+    // Click again to hide
+    await page.getByRole("button", { name: "Hide API key" }).click();
+    await expect(apiKeyInput).toHaveAttribute("type", "password");
+  });
 });
