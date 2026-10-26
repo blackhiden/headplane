@@ -1,5 +1,7 @@
 # Next
 
+# v1.0.13 (October 26, 2026)
+
 ## Changes
 
 - The Administration page now lets the local administrator view and update the
