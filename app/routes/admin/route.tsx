@@ -1,11 +1,14 @@
+import { Eye, EyeOff, Save } from "lucide-react";
 import { useState } from "react";
-import { Form, redirect, Link } from "react-router";
+import { Form, redirect, Link, useFetcher } from "react-router";
 
 import Button from "~/components/button";
 import Card from "~/components/card";
 import Notice from "~/components/notice";
 import { actorFromPrincipal } from "~/server/audit";
+import { updateConfig } from "~/server/config/write";
 import {
+  appConfigContext,
   authContext,
   localAdminContext,
   headscaleContext,
@@ -22,6 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const auth = context.get(authContext);
   const localAdmin = context.get(localAdminContext);
   const headscale = context.get(headscaleContext);
+  const config = context.get(appConfigContext);
   const configuredApiKey = context.get(headscaleApiKeyContext);
   const principal = await auth.require(request);
 
@@ -54,6 +58,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     username: localAdmin.value.getUsername(),
     configuredApiKeyPrefix: configuredApiKey?.slice(0, 8),
+    hasConfiguredApiKey: Boolean(configuredApiKey),
+    apiKeyManagedExternally: Boolean(config.headscale.api_key_path),
     apiKeys,
   };
 }
@@ -63,6 +69,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const localAdmin = context.get(localAdminContext);
   const headscale = context.get(headscaleContext);
   const audit = context.get(auditContext);
+  const config = context.get(appConfigContext);
   const configuredApiKey = context.get(headscaleApiKeyContext);
   const principal = await auth.require(request);
 
@@ -79,6 +86,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (actionType === "reset-password") {
     return await handlePasswordReset(formData, localAdmin, auth);
+  }
+
+  if (actionType === "update-apikey") {
+    return await handleUpdateApiKey(formData, config);
   }
 
   if (actionType === "create-apikey") {
@@ -174,6 +185,44 @@ async function handlePasswordReset(formData: FormData, localAdmin: any, auth: an
     }
     console.error("Error updating config:", error);
     return { success: false, error: "Failed to update password. See server logs for details." };
+  }
+}
+
+async function handleUpdateApiKey(formData: FormData, config: any) {
+  const apiKey = formData.get("api_key")?.toString()?.trim();
+
+  if (!apiKey) {
+    return { success: false, error: "API key is required" };
+  }
+
+  // If the key is managed externally via api_key_path, reject the update
+  if (config.headscale.api_key_path) {
+    return {
+      success: false,
+      error: "API key is managed externally via api_key_path. Update the secret file instead.",
+    };
+  }
+
+  // Determine the config file path
+  const configPath = process.env.HEADPLANE_CONFIG_PATH ?? "/etc/headplane/config.yaml";
+
+  try {
+    await updateConfig(configPath, { headscale: { api_key: apiKey } }, { backup: true });
+    log.info("config", "Headscale API key updated by local administrator");
+
+    return {
+      success: true,
+      message: "API key updated. Restart Headplane for the change to take effect.",
+    };
+  } catch (error: any) {
+    if (error.code === "CONFIG_WRITE_FAILED" || error.code === "EACCES" || error.code === "EPERM") {
+      return {
+        success: false,
+        error: "Config file is read-only. Update the API key manually in the config file.",
+      };
+    }
+    log.error("config", "Failed to update API key: %s", String(error));
+    return { success: false, error: "Failed to update API key. See server logs for details." };
   }
 }
 
@@ -295,6 +344,8 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const apiKeyFetcher = useFetcher();
 
   return (
     <>
@@ -380,6 +431,76 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
             Reset Password
           </Button>
         </Form>
+      </Card>
+
+      <Card className="mt-6 w-full max-w-none">
+        <Card.Title>Headscale API Key</Card.Title>
+        <Card.Text>
+          The API key Headplane uses to connect to Headscale. Update it here if the key has expired
+          or been rotated.
+        </Card.Text>
+
+        {loaderData.apiKeyManagedExternally && (
+          <Notice variant="info" className="mt-4">
+            The API key is managed externally via <code>headscale.api_key_path</code>. Update the
+            secret file directly to change it.
+          </Notice>
+        )}
+
+        {apiKeyFetcher.data?.success && (
+          <Notice variant="info" className="mt-4">
+            {apiKeyFetcher.data.message}
+          </Notice>
+        )}
+        {apiKeyFetcher.data && !apiKeyFetcher.data.success && (
+          <Notice variant="error" className="mt-4">
+            {apiKeyFetcher.data.error}
+          </Notice>
+        )}
+
+        <apiKeyFetcher.Form method="post" className="mt-6 space-y-4">
+          <input type="hidden" name="_action" value="update-apikey" />
+
+          <div>
+            <label htmlFor="api_key" className="mb-1 block text-sm font-medium">
+              API Key
+            </label>
+            <div className="relative">
+              <input
+                type={showApiKey ? "text" : "password"}
+                id="api_key"
+                name="api_key"
+                placeholder={
+                  loaderData.hasConfiguredApiKey
+                    ? `${loaderData.configuredApiKeyPrefix}********`
+                    : "Enter Headscale API key"
+                }
+                disabled={loaderData.apiKeyManagedExternally}
+                required
+                autoComplete="off"
+                className="border-line bg-surface w-full rounded-md border px-3 py-2 pr-10 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2"
+                aria-label={showApiKey ? "Hide API key" : "Show API key"}
+              >
+                {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-faint mt-1 text-xs">
+              {loaderData.hasConfiguredApiKey
+                ? "A key is currently configured. Enter a new key to replace it."
+                : "No key is currently configured."}
+            </p>
+          </div>
+
+          <Button type="submit" variant="heavy" disabled={loaderData.apiKeyManagedExternally}>
+            <Save className="h-4 w-4" />
+            Save API Key
+          </Button>
+        </apiKeyFetcher.Form>
       </Card>
 
       <ApiKeyManagement

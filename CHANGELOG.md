@@ -2,6 +2,13 @@
 
 ## Changes
 
+- The Administration page now lets the local administrator view and update the
+  configured Headscale API key (`headscale.api_key`) directly from `/admin`,
+  eliminating the need to edit the config file or use the CLI. The field is
+  masked by default with a show/hide toggle, and saving writes the key to
+  the config file atomically with a backup. When `headscale.api_key_path` is
+  in use, the field is disabled with a notice explaining the key is managed
+  externally.
 - Beautified the UI/UX across all pages by replacing hardcoded Tailwind color
   classes with the design system's semantic tokens (canvas, surface, raised,
   subtle, hover, line, fg, muted, faint, accent, ok, warn, bad, danger). This

@@ -110,10 +110,14 @@ function removeSupersededSecretPaths(
   updates: PartialHeadplaneConfig,
 ): void {
   if (updates.user?.password === undefined || !config.user) {
-    return;
+    // fall through to check headscale.api_key
+  } else {
+    delete (config.user as Record<string, unknown>).password_path;
   }
 
-  delete (config.user as Record<string, unknown>).password_path;
+  if (updates.headscale?.api_key !== undefined && config.headscale) {
+    delete (config.headscale as Record<string, unknown>).api_key_path;
+  }
 }
 
 /**

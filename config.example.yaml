@@ -144,6 +144,8 @@ headscale:
   # This is required for local password authentication, OIDC authentication,
   # proxy authentication, and the Headplane agent.
   # Generate one with: headscale apikeys create
+  # In single local administrator mode, this can be updated from the
+  # Administration page at /admin.
   api_key: "hskey-api-bZbrDrGA-xz_-4eOeY-dQzLOSWFf8gEEHIt43TCY7azMYYwzlSEHqRJ_VaPhY-lCuuhLAmWaiEJzw"
   # Or use api_key_path to load from a managed secret file:
   # api_key_path: "${CREDENTIALS_DIRECTORY}/headscale-api-key"

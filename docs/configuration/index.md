@@ -43,6 +43,18 @@ ends all password-authenticated sessions, including the current session.
 password from the profile page replaces `password_path` with the new bcrypt
 hash in `user.password`; use the password reset CLI and an updated secret file
 instead when the password must remain externally managed.
+
+### Headscale API key
+
+In single local administrator mode, the Headscale API key (`headscale.api_key`)
+can be viewed and updated from the **Administration** page at `/admin`. The
+field is masked by default with a show/hide toggle. Saving a new key writes it
+to the config file atomically with a private timestamped backup, and Headplane
+must be restarted for the change to take effect.
+
+When `headscale.api_key_path` is in use, the field is disabled and a notice
+explains that the key is managed externally; update the secret file directly
+instead.
 avatar: "https://example.com/avatar.png"
 
 ````
