@@ -21,10 +21,11 @@ You are assigned to implement the frontend Admin Technical Info section for Phas
    - `app/server/config/integration/docker.ts` (Docker detection)
    - `app/server/config/integration/proc.ts` (Proc detection)
 6. Implement the Admin Technical Info section as described in the instructions.
-7. Add tests for the new components and API endpoint.
-8. Run validation commands.
-9. Commit your work with the message: `admin: add technical info section to admin page`
-10. Report your commit SHA when complete.
+7. Run `pnpm install` in the worktree to install dependencies.
+8. Add tests for the new components and API endpoint.
+9. Run validation commands.
+10. Commit your work with the message: `admin: add technical info section to admin page`
+11. Report your commit SHA when complete.
 
 ## Key Files
 

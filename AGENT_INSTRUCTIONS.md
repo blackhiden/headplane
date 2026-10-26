@@ -91,6 +91,7 @@ Run these commands to validate:
 
 ```bash
 cd /home/denny/Project/headscale-project/headplane-admin-techinfo-ui
+pnpm install
 npx tsc --noEmit
 npx oxlint
 npx vitest run tests/unit
