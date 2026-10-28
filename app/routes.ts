@@ -10,7 +10,10 @@ export default [
     route("/color-scheme", "routes/util/color-scheme.ts"),
     route("/update-check", "routes/util/update-check.ts"),
     ...prefix("/v1/headplane", [route("/settings", "routes/api/v1/headplane-settings.ts")]),
-    ...prefix("/admin", [route("/apikeys", "routes/api/admin/apikeys.ts")]),
+    ...prefix("/admin", [
+      route("/apikeys", "routes/api/admin/apikeys.ts"),
+      route("/server-info", "routes/api/admin/server-info.ts"),
+    ]),
   ]),
   ...prefix("/events", [route("/live", "routes/util/live.ts")]),
 

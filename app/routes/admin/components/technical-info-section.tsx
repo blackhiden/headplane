@@ -21,6 +21,12 @@ interface HeadscaleServerInfo {
   goVersion?: string;
   platform?: string;
   architecture?: string;
+  cpuCount?: number;
+  totalMemory?: number;
+  totalStorage?: number;
+  deploymentMode?: string;
+  dockerVersion?: string;
+  publicIp?: string;
 }
 
 interface ServerInfoResponse {
@@ -37,7 +43,7 @@ export default function TechnicalInfoSection() {
   useEffect(() => {
     async function fetchServerInfo() {
       try {
-        const response = await fetch("/api/admin/server-info");
+        const response = await fetch(`${__PREFIX__}/api/admin/server-info`);
         if (!response.ok) {
           throw new Error(`Failed to fetch server info: ${response.statusText}`);
         }
@@ -105,6 +111,39 @@ export default function TechnicalInfoSection() {
         { label: "Go Version", value: serverInfo.headscale.goVersion },
         { label: "Platform", value: serverInfo.headscale.platform },
         { label: "Architecture", value: serverInfo.headscale.architecture },
+        ...(serverInfo.headscale.cpuCount !== undefined
+          ? [{ label: "CPU Cores", value: serverInfo.headscale.cpuCount }]
+          : []),
+        ...(serverInfo.headscale.totalMemory !== undefined && serverInfo.headscale.totalMemory > 0
+          ? [
+              {
+                label: "Total Memory",
+                value: serverInfo.headscale.totalMemory,
+                format: formatBytes,
+              },
+            ]
+          : []),
+        ...(serverInfo.headscale.totalStorage !== undefined && serverInfo.headscale.totalStorage > 0
+          ? [
+              {
+                label: "Total Storage",
+                value: serverInfo.headscale.totalStorage,
+                format: formatBytes,
+              },
+            ]
+          : []),
+        ...(serverInfo.headscale.deploymentMode
+          ? [
+              {
+                label: "Deployment Mode",
+                value: serverInfo.headscale.deploymentMode,
+                format: formatDeploymentMode,
+              },
+            ]
+          : []),
+        ...(serverInfo.headscale.publicIp
+          ? [{ label: "Public IP", value: serverInfo.headscale.publicIp }]
+          : []),
       ]
     : [];
 

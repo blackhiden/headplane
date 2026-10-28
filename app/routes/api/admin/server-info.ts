@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { arch, cpus, platform, release, totalmem, type as osType } from "node:os";
 
 import { data } from "react-router";
@@ -27,6 +28,12 @@ interface HeadscaleServerInfo {
   goVersion?: string;
   platform?: string;
   architecture?: string;
+  cpuCount?: number;
+  totalMemory?: number;
+  totalStorage?: number;
+  deploymentMode?: string;
+  dockerVersion?: string;
+  publicIp?: string;
 }
 
 interface ServerInfoResponse {
@@ -57,7 +64,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Gather Headplane server info
   const headplaneInfo: HeadplaneServerInfo = {
-    version: process.env.HEADPLANE_VERSION || "development",
+    version:
+      typeof __VERSION__ !== "undefined"
+        ? __VERSION__
+        : process.env.HEADPLANE_VERSION || "development",
     nodeVersion: process.version,
     os: osType(),
     osRelease: release(),
@@ -72,16 +82,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   let headscaleInfo: HeadscaleServerInfo | null = null;
   let error: string | undefined;
 
-  const apiKey = auth.getHeadscaleApiKey(principal);
+  let apiKey: string | undefined;
+  try {
+    apiKey = auth.getHeadscaleApiKey(principal);
+  } catch (err) {
+    log.warn("server-info", "No Headscale API key available: %s", String(err));
+    error = "No Headscale API key configured";
+  }
+
   if (apiKey) {
     try {
-      headscaleInfo = await headscale.client(apiKey).serverInfo.get();
+      const hsData = (await headscale.client(apiKey).serverInfo.get()) as any;
+      headscaleInfo = {
+        version: hsData.version,
+        buildTime: hsData.buildTime,
+        commit: hsData.commit,
+        goVersion: hsData.go?.version ?? hsData.goVersion,
+        platform: hsData.os ?? hsData.platform,
+        architecture: hsData.arch ?? hsData.architecture,
+        cpuCount: hsData.cpu?.count,
+        totalMemory: hsData.memory?.total,
+        totalStorage: hsData.storage?.total,
+        deploymentMode: hsData.deployment?.mode,
+        dockerVersion: hsData.deployment?.dockerVersion,
+        publicIp: hsData.publicIp,
+      };
     } catch (err) {
       log.warn("server-info", "Failed to fetch Headscale server info: %s", String(err));
       error = "Headscale server info unavailable";
     }
-  } else {
-    error = "No Headscale API key available";
   }
 
   const response: ServerInfoResponse = {
@@ -98,15 +127,29 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 function determineDeploymentMode(config: any): string {
   // Check if Docker integration is enabled
-  if (config.headscale?.integration?.docker?.enabled) {
+  if (config.integration?.docker?.enabled || config.headscale?.integration?.docker?.enabled) {
     return "docker";
   }
 
   // Check if proc integration is enabled
-  if (config.headscale?.integration?.proc?.enabled) {
+  if (config.integration?.proc?.enabled || config.headscale?.integration?.proc?.enabled) {
     return "native";
   }
 
-  // Default to unknown
-  return "unknown";
+  // Check if Kubernetes integration is enabled
+  if (
+    config.integration?.kubernetes?.enabled ||
+    config.headscale?.integration?.kubernetes?.enabled
+  ) {
+    return "kubernetes";
+  }
+
+  // Check filesystem indicators
+  try {
+    if (existsSync("/.dockerenv") || existsSync("/run/.containerenv")) {
+      return "docker";
+    }
+  } catch {}
+
+  return "native";
 }
