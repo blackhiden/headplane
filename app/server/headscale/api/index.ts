@@ -27,6 +27,7 @@ import { makeDerpApi, type DerpApi } from "./resources/derp";
 import { makeNodeApi, type NodeApi } from "./resources/nodes";
 import { makePolicyApi, type PolicyApi } from "./resources/policy";
 import { makePreAuthKeyApi, type PreAuthKeyApi } from "./resources/pre-auth-keys";
+import { makeServerInfoApi, type ServerInfoApi } from "./resources/server-info";
 import { makeUserApi, type UserApi } from "./resources/users";
 import { formatServerVersion, parseServerVersion, type ServerVersion } from "./server-version";
 import { createTransport } from "./transport";
@@ -58,6 +59,7 @@ export interface HeadscaleClient {
   apiKeys: ApiKeyApi;
   auth: AuthApi;
   derp: DerpApi;
+  serverInfo: ServerInfoApi;
 }
 
 /**
@@ -183,6 +185,7 @@ export async function createHeadscale(opts: CreateHeadscaleOptions): Promise<Hea
         apiKeys: makeApiKeyApi(transport, capabilities, apiKey),
         auth: makeAuthApi(transport, capabilities, apiKey),
         derp: makeDerpApi(transport, apiKey),
+        serverInfo: makeServerInfoApi(transport, apiKey),
       };
     },
     async dispose() {
