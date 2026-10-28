@@ -191,6 +191,17 @@ export function composeListener(opts: ListenerOptions): RequestListener {
           res.end();
           return;
         }
+
+        const prefix = basename.endsWith("/") ? basename.slice(0, -1) : basename;
+        if (
+          !url.pathname.startsWith(`${prefix}/`) &&
+          (url.pathname.startsWith("/api/") || url.pathname === "/healthz")
+        ) {
+          res.statusCode = 307;
+          res.setHeader("Location", `${prefix}${url.pathname}${url.search}`);
+          res.end();
+          return;
+        }
       } catch {}
     }
 
