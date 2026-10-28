@@ -20,6 +20,7 @@ import log from "~/utils/log";
 
 import type { Route } from "./+types/route";
 import ApiKeyManagement from "./components/api-key-management";
+import TechnicalInfoSection from "./components/technical-info-section";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const auth = context.get(authContext);
@@ -507,6 +508,8 @@ export default function AdminRoute({ loaderData, actionData }: Route.ComponentPr
         configuredApiKeyPrefix={loaderData.configuredApiKeyPrefix}
         apiKeys={loaderData.apiKeys}
       />
+
+      <TechnicalInfoSection />
     </>
   );
 }
