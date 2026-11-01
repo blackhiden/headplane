@@ -1,4 +1,4 @@
-# Next
+# 1.0.17 (November 1, 2026)
 
 ## Upgrading
 
