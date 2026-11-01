@@ -1,13 +1,30 @@
 # Next
 
+## Upgrading
+
+- DNS records are only read from and written to the file in Headscale's `dns.extra_records_path`. Records listed inline under `dns.extra_records` show as read-only, so move them into the file to keep editing them.
+- The `proc` and `kubernetes` integrations now restart Headscale instead of reloading it, so Headscale needs a supervisor that brings it back: systemd with `Restart=always`, which Headscale's own unit and the NixOS module already set, or the kubelet.
+- Enabling more than one integration now turns them all off, with an error in the log. Keep one.
+- After signing in with single sign-on, only owners, admins and IT admins can pick which Headscale user their account links to. Everyone else links automatically or is linked from the **Users** page.
+- Builds no longer read `__INTERNAL_PREFIX`. If a build used it to serve Headplane somewhere other than `/admin`, set `server.base_path` to that path instead.
+
+## Changes
+
+- Synchronized with upstream Headplane main branch (November 1, 2026), incorporating latest upstream improvements while preserving all fork-specific features
+- Headplane can be served under a path other than `/admin` by setting `server.base_path`, without building it from source.
+- Headplane has a new color palette built from its logo: warm greys, black primary buttons, and a muted blue that marks links, focus, and the current page.
+- Dialogs can now be closed by clicking outside them, except the ones that confirm a destructive action.
+- The navigation bar is slimmer, and on small screens the pages now live in a menu instead of a second row of tabs.
+- The machines list is easier to scan: each machine shows its status next to its name, its tags and badges on one line.
+- Settings has a sidebar for **Auth keys**, **Sign-in restrictions**, and **Agent**.
+- Preserved all fork-specific features: update checker, QR scanner, local routes/topology/DERP/instances/audit/admin pages, and documentation.
+
 ## Fixes
 
-- Fixed the "Register Machine" modal on `/admin/machines` failing to render correctly
-  with broken Cancel and Register buttons. The issue was caused by TypeScript API
-  incompatibilities introduced during the v1.0.13 UI refactor: `ActionDialog` used
-  invalid `variant="primary"` and unsupported `pending` prop on buttons, and
-  `DialogTitle`/`DialogDescription` used deprecated `asChild` prop no longer
-  supported by Base UI.
+- Fixed several broken actions when sitting behind a reverse proxy that terminates TLS.
+- Fixed the **Add nameserver** dialog state when closing and reopening.
+- Single sign-on no longer fails with "Unexpected Server Error" when `server.base_url` is missing.
+- Browser SSH works with SSH rules that use the `check` action on Headscale 0.29.
 
 # v1.0.13 (October 26, 2026)
 
