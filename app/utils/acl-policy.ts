@@ -1,3 +1,15 @@
+import {
+  applyEdits,
+  createScanner,
+  type Edit,
+  format as formatJson,
+  getNodeValue,
+  parseTree,
+  printParseErrorCode,
+  type ParseError,
+  SyntaxKind,
+} from "jsonc-parser";
+
 import { scanHuJson } from "~/utils/node-info";
 
 // A structured view over the Headscale ACL policy (HuJSON), which Headscale
@@ -22,6 +34,23 @@ export interface SshRule {
   extra: Record<string, unknown>;
 }
 
+// Ports and protocols live in `ip`, so `dst` carries no port spec. `app`
+// capabilities are kept in `extra`.
+export interface Grant {
+  src: string[];
+  dst: string[];
+  ip: string[];
+  // Tags of the subnet routers the traffic must go through.
+  via: string[];
+  extra: Record<string, unknown>;
+}
+
+export interface AutoApprovers {
+  routes: Record<string, string[]>;
+  exitNode: string[];
+  extra: Record<string, unknown>;
+}
+
 // The SSH actions the editor offers; anything else is kept and shown as-is.
 export const KNOWN_SSH_ACTIONS = ["accept", "check"];
 
@@ -31,15 +60,27 @@ export interface Policy {
   hosts: Record<string, string>;
   acls: AclRule[];
   ssh: SshRule[];
-  // Top-level keys Headplane does not model (autoApprovers, nodeAttrs, ...)
+  grants: Grant[];
+  autoApprovers: AutoApprovers;
+  // Top-level keys Headplane does not model (nodeAttrs, tests, ...)
   extra: Record<string, unknown>;
   // The order the top-level keys appeared in, so serializing keeps it.
   keyOrder: string[];
 }
 
-export type ParseResult =
-  | { ok: true; policy: Policy; hasComments: boolean }
-  | { ok: false; error: string };
+// `error` is the first problem with its location, `diagnostics` every problem
+// as a range for the editor to mark.
+type ParseFailure = { ok: false; error: string; diagnostics: PolicyDiagnostic[] };
+
+export type ParseResult = { ok: true; policy: Policy; hasComments: boolean } | ParseFailure;
+
+export type FormatResult = { ok: true; value: string } | { ok: false; error: string };
+
+export interface PolicyDiagnostic {
+  from: number;
+  to: number;
+  message: string;
+}
 
 export const EMPTY_POLICY: Policy = {
   groups: {},
@@ -47,33 +88,25 @@ export const EMPTY_POLICY: Policy = {
   hosts: {},
   acls: [],
   ssh: [],
+  grants: [],
+  autoApprovers: { routes: {}, exitNode: [], extra: {} },
   extra: {},
   keyOrder: [],
 };
 
-const KNOWN_KEYS = ["groups", "tagOwners", "hosts", "acls", "ssh"];
+const KNOWN_KEYS = ["groups", "tagOwners", "hosts", "acls", "ssh", "grants", "autoApprovers"];
 
 export function parsePolicy(raw: string): ParseResult {
   if (raw.trim().length === 0) {
     return { ok: true, policy: structuredClone(EMPTY_POLICY), hasComments: false };
   }
 
-  const { stripped, hasComments } = scanHuJson(raw);
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stripped);
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "The policy is not valid HuJSON",
-    };
-  }
+  const result = parseHuJson(raw);
+  if (!result.ok) return result;
 
-  if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { ok: false, error: "The policy must be a JSON object" };
-  }
+  const { parsed, hasComments } = result;
 
-  const record = parsed as Record<string, unknown>;
+  const record = parsed;
   const extra: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
     if (!KNOWN_KEYS.includes(key)) {
@@ -90,10 +123,107 @@ export function parsePolicy(raw: string): ParseResult {
       hosts: toStringMap(record.hosts),
       acls: toAclRules(record.acls),
       ssh: toSshRules(record.ssh),
+      grants: toGrants(record.grants),
+      autoApprovers: toAutoApprovers(record.autoApprovers),
       extra,
       keyOrder: Object.keys(record),
     },
   };
+}
+
+export function formatPolicy(raw: string): FormatResult {
+  if (raw.trim().length === 0) {
+    return { ok: false, error: "The policy is empty" };
+  }
+
+  const result = parseHuJson(raw);
+  if (!result.ok) return result;
+
+  // Line breaks are kept: a hand-written policy groups rules with blank lines
+  // and keeps short arrays inline, and reflowing would throw both away.
+  const edits = formatJson(raw, undefined, {
+    eol: "\n",
+    insertFinalNewline: true,
+    insertSpaces: true,
+    keepLines: true,
+    tabSize: 2,
+  });
+  return { ok: true, value: trimBracketPadding(applyEdits(raw, edits)) };
+}
+
+// The formatter writes single-line arrays as `[ "a" ]`, policies use `["a"]`.
+function trimBracketPadding(text: string): string {
+  const tokens: { kind: SyntaxKind; offset: number; length: number }[] = [];
+  const scanner = createScanner(text, false);
+  for (let kind = scanner.scan(); kind !== SyntaxKind.EOF; kind = scanner.scan()) {
+    tokens.push({ kind, offset: scanner.getTokenOffset(), length: scanner.getTokenLength() });
+  }
+
+  const isCode = (kind: SyntaxKind) =>
+    kind !== SyntaxKind.LineBreakTrivia &&
+    kind !== SyntaxKind.LineCommentTrivia &&
+    kind !== SyntaxKind.BlockCommentTrivia;
+
+  const edits: Edit[] = [];
+  for (let i = 1; i < tokens.length - 1; i++) {
+    const [before, space, after] = [tokens[i - 1], tokens[i], tokens[i + 1]];
+    if (space.kind !== SyntaxKind.Trivia) continue;
+
+    const isAfterOpen = before.kind === SyntaxKind.OpenBracketToken && isCode(after.kind);
+    const isBeforeClose = after.kind === SyntaxKind.CloseBracketToken && isCode(before.kind);
+    if (isAfterOpen || isBeforeClose) {
+      edits.push({ offset: space.offset, length: space.length, content: "" });
+    }
+  }
+
+  return applyEdits(text, edits);
+}
+
+type HuJsonResult =
+  | { ok: true; parsed: Record<string, unknown>; hasComments: boolean }
+  | ParseFailure;
+
+function parseHuJson(raw: string): HuJsonResult {
+  const errors: ParseError[] = [];
+  const tree = parseTree(raw, errors, { allowTrailingComma: true });
+  if (errors.length > 0) {
+    const first = errors[0];
+    return {
+      ok: false,
+      error: withLocation(raw, humanizeParseError(first), first.offset),
+      diagnostics: errors.map((error) => ({
+        from: error.offset,
+        to: Math.min(raw.length, error.offset + Math.max(1, error.length)),
+        message: humanizeParseError(error),
+      })),
+    };
+  }
+
+  if (tree?.type !== "object") {
+    const message = "The policy must be a JSON object";
+    return { ok: false, error: message, diagnostics: [{ from: 0, to: raw.length, message }] };
+  }
+
+  return {
+    ok: true,
+    parsed: getNodeValue(tree) as Record<string, unknown>,
+    hasComments: scanHuJson(raw).hasComments,
+  };
+}
+
+function humanizeParseError(error: ParseError): string {
+  return printParseErrorCode(error.error).replace(
+    /([a-z])([A-Z])/g,
+    (_, last, next) => `${last} ${next.toLowerCase()}`,
+  );
+}
+
+function withLocation(raw: string, message: string, offset: number): string {
+  const before = raw.slice(0, offset);
+  const line = before.split(/\r\n|\r|\n/).length;
+  const lastLineBreak = Math.max(before.lastIndexOf("\n"), before.lastIndexOf("\r"));
+  const column = offset - lastLineBreak;
+  return `${message} at line ${line}, column ${column}`;
 }
 
 export function serializePolicy(policy: Policy): string {
@@ -105,6 +235,9 @@ export function serializePolicy(policy: Policy): string {
   if (Object.keys(policy.hosts).length > 0) sections.hosts = policy.hosts;
   if (policy.acls.length > 0) sections.acls = policy.acls.map(compactAclRule);
   if (policy.ssh.length > 0) sections.ssh = policy.ssh.map(compactSshRule);
+  if (policy.grants.length > 0) sections.grants = policy.grants.map(compactGrant);
+  const autoApprovers = compactAutoApprovers(policy.autoApprovers);
+  if (Object.keys(autoApprovers).length > 0) sections.autoApprovers = autoApprovers;
   for (const [key, value] of Object.entries(policy.extra)) {
     sections[key] = value;
   }
@@ -290,6 +423,19 @@ export function isValidHostName(name: string): boolean {
   return /^[a-z0-9][a-z0-9-]*$/.test(name);
 }
 
+export function isValidRoute(route: string): boolean {
+  const [address, prefixLength, ...rest] = route.split("/");
+  if (rest.length > 0 || prefixLength === undefined || !/^\d{1,3}$/.test(prefixLength)) {
+    return false;
+  }
+
+  if (IPV4.test(address)) {
+    return Number(prefixLength) <= 32 && address.split(".").every((octet) => Number(octet) <= 255);
+  }
+
+  return isIpv6(route) && Number(prefixLength) <= 128;
+}
+
 // MARK: Internals
 
 function toStringListMap(value: unknown): Record<string, string[]> {
@@ -330,6 +476,8 @@ function toStringList(value: unknown): string[] {
 
 const ACL_RULE_KEYS = ["action", "src", "dst", "proto"];
 const SSH_RULE_KEYS = ["action", "src", "dst", "users", "checkPeriod"];
+const GRANT_KEYS = ["src", "dst", "ip", "via"];
+const AUTO_APPROVER_KEYS = ["routes", "exitNode"];
 
 function toAclRules(value: unknown): AclRule[] {
   if (!Array.isArray(value)) {
@@ -374,6 +522,35 @@ function toSshRules(value: unknown): SshRule[] {
     });
 }
 
+function toGrants(value: unknown): Grant[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((entry): entry is Record<string, unknown> => entry != null && typeof entry === "object")
+    .map((entry) => ({
+      src: toStringList(entry.src),
+      dst: toStringList(entry.dst),
+      ip: toStringList(entry.ip),
+      via: toStringList(entry.via),
+      extra: extraKeys(entry, GRANT_KEYS),
+    }));
+}
+
+function toAutoApprovers(value: unknown): AutoApprovers {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+    return { routes: {}, exitNode: [], extra: {} };
+  }
+
+  const record = value as Record<string, unknown>;
+  return {
+    routes: toStringListMap(record.routes),
+    exitNode: toStringList(record.exitNode),
+    extra: extraKeys(record, AUTO_APPROVER_KEYS),
+  };
+}
+
 // Fields with no editor — `srcPosture`, `acceptEnv` — ride along untouched.
 function extraKeys(entry: Record<string, unknown>, known: string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -400,6 +577,20 @@ function compactSshRule(rule: SshRule): Record<string, unknown> {
   };
   if (rule.checkPeriod) out.checkPeriod = rule.checkPeriod;
   return { ...out, ...rule.extra };
+}
+
+function compactGrant(grant: Grant): Record<string, unknown> {
+  const out: Record<string, unknown> = { src: grant.src, dst: grant.dst };
+  if (grant.ip.length > 0) out.ip = grant.ip;
+  if (grant.via.length > 0) out.via = grant.via;
+  return { ...out, ...grant.extra };
+}
+
+function compactAutoApprovers(approvers: AutoApprovers): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (Object.keys(approvers.routes).length > 0) out.routes = approvers.routes;
+  if (approvers.exitNode.length > 0) out.exitNode = approvers.exitNode;
+  return { ...out, ...approvers.extra };
 }
 
 function unique(values: string[]): string[] {

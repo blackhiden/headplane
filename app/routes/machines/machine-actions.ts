@@ -1,475 +1,161 @@
-import { data, redirect } from "react-router";
+import { redirect } from "react-router";
+import * as v from "valibot";
 
-import { actorFromPrincipal, type AuditService } from "~/server/audit";
 import {
-  auditContext,
   authContext,
+  headscaleContext,
   headscaleLiveStoreContext,
   requestApiContext,
 } from "~/server/context";
-import type { HeadscaleClient } from "~/server/headscale/api";
 import { isDataWithApiError } from "~/server/headscale/api/error-client";
-import { nodesResource, type LiveStore } from "~/server/headscale/live-store";
-import type { AuthService, Principal } from "~/server/web/auth";
+import { nodesResource } from "~/server/headscale/live-store";
+import { ActionError, createAction } from "~/server/web/actions";
 import { Capabilities } from "~/server/web/roles";
+import { invalid, list, ok } from "~/utils/form";
 import { normalizeRegistrationKey } from "~/utils/register-key";
 
-import type { Route } from "./+types/machine";
+import { machineName } from "./schemas";
 
-export async function machineAction({ request, context }: Route.ActionArgs) {
-  const audit = context.get(auditContext);
-  const auth = context.get(authContext);
-  const getRequestApi = context.get(requestApiContext);
-  const headscaleLiveStore = context.get(headscaleLiveStoreContext);
+const nodeId = v.pipe(v.string(), v.minLength(1));
+const toggle = v.picklist(["true", "false"]);
 
-  const { principal, api } = await getRequestApi(request);
+export const machineAction = createAction({
+  async setup({ request, context }) {
+    const { principal, api } = await context.get(requestApiContext)(request);
+    const auth = context.get(authContext);
+    const liveStore = context.get(headscaleLiveStoreContext);
+    const { capabilities } = context.get(headscaleContext);
 
-  const formData = await request.formData();
+    async function requireNode(id: string) {
+      const node = await api.nodes.get(id).catch((error: unknown) => {
+        if (isDataWithApiError(error) && error.data.statusCode === 404) {
+          throw new ActionError("This machine no longer exists.", 404);
+        }
 
-  const action = formData.get("action_id")?.toString();
-  if (!action) {
-    throw data("Missing `action_id` in the form data.", {
-      status: 400,
-    });
-  }
-
-  // Fast track register since it doesn't require an existing machine
-  if (action === "register") {
-    if (!auth.can(principal, Capabilities.write_machines)) {
-      throw data("You do not have permission to manage machines", {
-        status: 403,
+        throw error;
       });
+
+      if (!auth.canManageNode(principal, node)) {
+        throw new ActionError("You don't have permission to manage this machine.", 403);
+      }
+
+      return node;
     }
 
-    const registrationKeyInput = formData.get("register_key")?.toString();
-    if (!registrationKeyInput) {
-      throw data("Missing `register_key` in the form data.", {
-        status: 400,
-      });
-    }
-
-    const registrationKey = normalizeRegistrationKey(registrationKeyInput);
-    if (!registrationKey) {
-      throw data("Invalid `register_key` in the form data.", {
-        status: 400,
-      });
-    }
-
-    const user = formData.get("user")?.toString();
-    if (!user) {
-      throw data("Missing `user` in the form data.", {
-        status: 400,
-      });
-    }
-
-    const node = await api.nodes.register(user, registrationKey);
-    await headscaleLiveStore.refresh(nodesResource, api);
-    const actor = actorFromPrincipal(principal);
-    await audit.record({
-      ...actor,
-      action: "machine.register",
-      resourceType: "machine",
-      resourceId: node.id,
-      details: { name: node.givenName, user },
-    });
-    return redirect(`/machines/${node.id}`);
-  }
-
-  // Batch actions operate on multiple machines at once and carry their own
-  // node list, so they are handled before the single-node lookup below.
-  if (action.startsWith("batch_")) {
-    return handleBatchAction(action, formData, {
-      audit,
-      auth,
+    return {
       principal,
       api,
-      headscaleLiveStore,
-    });
-  }
-
-  // Check if the user has permission to manage this machine
-  const nodeId = formData.get("node_id")?.toString();
-  if (!nodeId) {
-    throw data("Missing `node_id` in the form data.", {
-      status: 400,
-    });
-  }
-
-  const node = await api.nodes.get(nodeId);
-  if (!node) {
-    throw data(`Machine with ID ${nodeId} not found`, {
-      status: 404,
-    });
-  }
-
-  if (!auth.canManageNode(principal, node)) {
-    throw data("You do not have permission to act on this machine", {
-      status: 403,
-    });
-  }
-
-  switch (action) {
-    case "rename": {
-      const newName = formData.get("name")?.toString();
-      if (!newName) {
-        throw data("Missing `name` in the form data.", {
-          status: 400,
-        });
-      }
-
-      const name = String(formData.get("name"));
-      if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(name.toLowerCase())) {
-        throw data(
-          "Machine names must be valid DNS labels: lowercase letters, numbers, and hyphens only, and must start and end with a letter or number.",
-          { status: 400 },
-        );
-      }
-
-      await api.nodes.rename(nodeId, name);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.rename",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { from: node.givenName, to: name },
-      });
-      return { message: "Machine renamed" };
-    }
-
-    case "delete": {
-      await api.nodes.delete(nodeId);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.delete",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { name: node.givenName },
-      });
-      return redirect("/machines");
-    }
-
-    case "expire": {
-      await api.nodes.expire(nodeId);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.expire",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { name: node.givenName },
-      });
-      return { message: "Machine expired" };
-    }
-
-    case "rotate_key": {
-      await api.nodes.expire(nodeId);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.rotate_key",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { name: node.givenName },
-      });
-      return { message: "Key rotated — the machine must re-authenticate" };
-    }
-
-    case "toggle_expiry": {
-      const disableExpiry = String(formData.get("disableExpiry")) === "true";
-      await api.nodes.toggleExpiry(nodeId, disableExpiry);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.expire",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { name: node.givenName, disableExpiry },
-      });
-      return { message: "Machine expired" };
-    }
-
-    case "update_tags": {
-      const tags = formData.get("tags")?.toString().split(",") ?? [];
-      if (tags.length === 0) {
-        throw data("Missing `tags` in the form data.", {
-          status: 400,
-        });
-      }
-
-      try {
-        await api.nodes.setTags(
-          nodeId,
-          tags.map((tag) => tag.trim()).filter((tag) => tag !== ""),
-        );
-
-        await headscaleLiveStore.refresh(nodesResource, api);
-        const actor = actorFromPrincipal(principal);
-        await audit.record({
-          ...actor,
-          action: "machine.tags",
-          resourceType: "machine",
-          resourceId: nodeId,
-          details: {
-            name: node.givenName,
-            tags: tags.map((tag) => tag.trim()).filter((tag) => tag !== ""),
-          },
-        });
-        return { success: true as const, message: "Tags updated" };
-      } catch (error) {
-        if (isDataWithApiError(error) && error.data.statusCode === 400) {
-          return data(
-            {
-              success: false as const,
-              error:
-                extractApiErrorMessage(error.data) ??
-                "One or more tags are not defined in your ACL policy. Please add them to your policy before assigning them to a machine.",
-            },
-            { status: 400 },
-          );
-        }
-
-        throw error;
-      }
-    }
-
-    case "update_routes": {
-      const newApproved = node.approvedRoutes;
-      const routes = formData.get("routes")?.toString();
-      if (!routes) {
-        throw data("Missing `routes` in the form data.", {
-          status: 400,
-        });
-      }
-
-      const allRoutes = routes.split(",").map((route) => route.trim());
-      if (allRoutes.length === 0) {
-        throw data("No routes provided to update", {
-          status: 400,
-        });
-      }
-
-      const enabled = formData.get("enabled")?.toString();
-      if (enabled === undefined) {
-        throw data("Missing `enabled` in the form data.", {
-          status: 400,
-        });
-      }
-
-      if (enabled === "true") {
-        for (const route of allRoutes) {
-          // If already approved, skip, otherwise add to approved
-          if (newApproved.includes(route)) {
-            continue;
-          }
-
-          newApproved.push(route);
-        }
-      } else {
-        for (const route of allRoutes) {
-          // If not approved, skip, otherwise remove from approved
-          if (!newApproved.includes(route)) {
-            continue;
-          }
-
-          const index = newApproved.indexOf(route);
-          if (index > -1) {
-            newApproved.splice(index, 1);
-          }
-        }
-      }
-
-      await api.nodes.approveRoutes(nodeId, newApproved);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.routes",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { name: node.givenName, routes: newApproved },
-      });
-      return { message: "Routes updated" };
-    }
-
-    case "reassign": {
-      const user = formData.get("user_id")?.toString();
-      if (!user) {
-        throw data("Missing `user_id` in the form data.", {
-          status: 400,
-        });
-      }
-
-      if (!api.nodes.reassignUser) {
-        throw data("Reassigning a node owner is no longer supported on this Headscale version.", {
-          status: 400,
-        });
-      }
-      await api.nodes.reassignUser(nodeId, user);
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.reassign",
-        resourceType: "machine",
-        resourceId: nodeId,
-        details: { name: node.givenName, user },
-      });
-      return { message: "Machine reassigned" };
-    }
-
-    default:
-      throw data("Invalid action", {
-        status: 400,
-      });
-  }
-}
-
-function extractApiErrorMessage(error: { data?: unknown; rawData: string }) {
-  if (error.data != null && typeof error.data === "object" && "message" in error.data) {
-    const message = (error.data as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-  }
-
-  return error.rawData.length > 0 ? error.rawData : undefined;
-}
-
-function parseNodeIds(formData: FormData): string[] {
-  const raw = formData.get("node_ids")?.toString();
-  if (!raw) {
-    throw data("Missing `node_ids` in the form data.", {
-      status: 400,
-    });
-  }
-
-  const ids = raw
-    .split(",")
-    .map((id) => id.trim())
-    .filter((id) => id !== "");
-  if (ids.length === 0) {
-    throw data("No machines selected for the bulk action.", {
-      status: 400,
-    });
-  }
-
-  return ids;
-}
-
-async function handleBatchAction(
-  action: string,
-  formData: FormData,
-  deps: {
-    audit: AuditService;
-    auth: AuthService;
-    principal: Principal;
-    api: HeadscaleClient;
-    headscaleLiveStore: LiveStore;
+      capabilities,
+      requireNode,
+      refresh: () => liveStore.refresh(nodesResource, api),
+    };
   },
-) {
-  const { audit, auth, principal, api, headscaleLiveStore } = deps;
+  intents: {
+    register: {
+      capability: Capabilities.write_machines,
+      fields: {
+        register_key: v.pipe(v.string(), v.minLength(1, "Paste the machine key.")),
+        user: v.pipe(v.string(), v.minLength(1, "Choose an owner.")),
+      },
+      async handler(input, { api, refresh }) {
+        const registrationKey = normalizeRegistrationKey(input.register_key);
+        if (!registrationKey) {
+          return invalid({
+            register_key:
+              "Paste the registration URL or full hskey-authreq-... key from tailscale up.",
+          });
+        }
 
-  if (!auth.can(principal, Capabilities.write_machines)) {
-    throw data("You do not have permission to manage machines", {
-      status: 403,
-    });
-  }
+        const node = await api.nodes.register(input.user, registrationKey);
+        await refresh();
+        return redirect(`/machines/${node.id}`);
+      },
+    },
+    rename: {
+      fields: { node_id: nodeId, name: machineName },
+      async handler(input, { api, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        await api.nodes.rename(node.id, input.name);
+        await refresh();
+        return ok("Machine renamed");
+      },
+    },
+    delete: {
+      fields: { node_id: nodeId },
+      async handler(input, { api, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        await api.nodes.delete(node.id);
+        await refresh();
+        return redirect("/machines");
+      },
+    },
+    expire: {
+      fields: { node_id: nodeId },
+      async handler(input, { api, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        await api.nodes.expire(node.id);
+        await refresh();
+        return ok("Machine expired");
+      },
+    },
+    toggle_expiry: {
+      fields: { node_id: nodeId, disable_expiry: toggle },
+      async handler(input, { api, capabilities, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        const disableExpiry = input.disable_expiry === "true";
 
-  const nodeIds = parseNodeIds(formData);
-  const nodes = await Promise.all(nodeIds.map((id) => api.nodes.get(id)));
-  for (const node of nodes) {
-    if (!auth.canManageNode(principal, node)) {
-      throw data("You do not have permission to act on one or more machines", {
-        status: 403,
-      });
-    }
-  }
+        // Older versions take this as a request to expire the machine now.
+        if (disableExpiry && !capabilities.keyExpiryCanBeDisabled) {
+          throw new ActionError("Turning off key expiry needs Headscale 0.29 or newer.");
+        }
 
-  switch (action) {
-    case "batch_expire": {
-      await Promise.all(nodes.map((node) => api.nodes.expire(node.id)));
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.expire",
-        resourceType: "machine",
-        resourceId: null,
-        details: { nodeIds, names: nodes.map((node) => node.givenName) },
-      });
-      return {
-        message: `${nodes.length} ${nodes.length === 1 ? "machine" : "machines"} expired`,
-      };
-    }
+        await api.nodes.toggleExpiry(node.id, disableExpiry);
+        await refresh();
+        return ok(disableExpiry ? "Key expiry disabled" : "Key expiry enabled");
+      },
+    },
+    update_tags: {
+      fields: { node_id: nodeId, tags: list() },
+      async handler(input, { api, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        const tags = input.tags.map((tag) => tag.trim()).filter((tag) => tag !== "");
+        await api.nodes.setTags(node.id, tags);
+        await refresh();
+        return ok("Tags updated");
+      },
+    },
+    update_routes: {
+      fields: { node_id: nodeId, routes: list(), enabled: toggle },
+      async handler(input, { api, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        const routes = input.routes.map((route) => route.trim()).filter((route) => route !== "");
+        const approved =
+          input.enabled === "true"
+            ? [...new Set([...node.approvedRoutes, ...routes])]
+            : node.approvedRoutes.filter((route) => !routes.includes(route));
 
-    case "batch_delete": {
-      await Promise.all(nodes.map((node) => api.nodes.delete(node.id)));
-      await headscaleLiveStore.refresh(nodesResource, api);
-      const actor = actorFromPrincipal(principal);
-      await audit.record({
-        ...actor,
-        action: "machine.delete",
-        resourceType: "machine",
-        resourceId: null,
-        details: { nodeIds, names: nodes.map((node) => node.givenName) },
-      });
-      return {
-        message: `${nodes.length} ${nodes.length === 1 ? "machine" : "machines"} removed`,
-      };
-    }
-
-    case "batch_update_tags": {
-      const tags = formData.get("tags")?.toString();
-      if (!tags) {
-        throw data("Missing `tags` in the form data.", {
-          status: 400,
-        });
-      }
-
-      const cleanedTags = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag !== "");
-
-      try {
-        await Promise.all(nodes.map((node) => api.nodes.setTags(node.id, cleanedTags)));
-        await headscaleLiveStore.refresh(nodesResource, api);
-        const actor = actorFromPrincipal(principal);
-        await audit.record({
-          ...actor,
-          action: "machine.tags",
-          resourceType: "machine",
-          resourceId: null,
-          details: { nodeIds, tags: cleanedTags },
-        });
-        return { success: true as const, message: `Tags updated on ${nodes.length} machines` };
-      } catch (error) {
-        if (isDataWithApiError(error) && error.data.statusCode === 400) {
-          return data(
-            {
-              success: false as const,
-              error:
-                extractApiErrorMessage(error.data) ??
-                "One or more tags are not defined in your ACL policy. Please add them to your policy before assigning them to a machine.",
-            },
-            { status: 400 },
+        await api.nodes.approveRoutes(node.id, approved);
+        await refresh();
+        return ok("Routes updated");
+      },
+    },
+    reassign: {
+      fields: {
+        node_id: nodeId,
+        user_id: v.pipe(v.string(), v.minLength(1, "Choose an owner.")),
+      },
+      async handler(input, { api, requireNode, refresh }) {
+        const node = await requireNode(input.node_id);
+        if (!api.nodes.reassignUser) {
+          throw new ActionError(
+            "Changing a machine's owner isn't supported on this Headscale version.",
           );
         }
 
-        throw error;
-      }
-    }
-
-    default:
-      throw data("Invalid action", {
-        status: 400,
-      });
-  }
-}
+        await api.nodes.reassignUser(node.id, input.user_id);
+        await refresh();
+        return ok("Owner changed");
+      },
+    },
+  },
+});

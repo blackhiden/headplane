@@ -4,7 +4,7 @@
 // Vendored from tailscale.com/cmd/tsconnect/wasm/wasm_js.go.
 // Upstream ref: fb27d87e02c7358e44a063668902a183216b72ae
 //
-// Local changes live in patches/tsconnect-term-type.patch and are already
+// Local changes live in patches/tsconnect-*.patch and are already
 // applied here. Run scripts/sync-tsconnect.sh to move to a newer upstream.
 
 // The wasm package builds a WebAssembly module that provides a subset of
@@ -29,6 +29,7 @@ import (
 	"strings"
 	"syscall/js"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/crypto/ssh"
 	"tailscale.com/control/controlclient"
@@ -435,11 +436,21 @@ func (s *jsSSHSession) Run() {
 	}
 	defer c.Close()
 
+	// A handshake that stalls would otherwise hang the terminal forever.
+	c.SetDeadline(time.Now().Add(time.Duration(timeoutSeconds * float64(time.Second))))
+
 	config := &ssh.ClientConfig{
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			// Host keys are not used with Tailscale SSH, but we can use this
 			// callback to know that the connection has been established.
 			reportProgress("SSH connection established…")
+			return nil
+		},
+		// Rules with the check action send their sign-in URL as a banner, then
+		// wait for the person to finish signing in.
+		BannerCallback: func(message string) error {
+			writeFn.Invoke(strings.ReplaceAll(message, "\n", "\r\n"))
+			c.SetDeadline(time.Now().Add(5 * time.Minute))
 			return nil
 		},
 		User: s.username,
@@ -452,6 +463,7 @@ func (s *jsSSHSession) Run() {
 		return
 	}
 	defer sshConn.Close()
+	c.SetDeadline(time.Time{})
 
 	sshClient := ssh.NewClient(sshConn, nil, nil)
 	defer sshClient.Close()
@@ -470,8 +482,8 @@ func (s *jsSSHSession) Run() {
 		return
 	}
 
-	session.Stdout = termWriter{writeFn}
-	session.Stderr = termWriter{writeFn}
+	session.Stdout = &termWriter{f: writeFn}
+	session.Stderr = &termWriter{f: writeFn}
 
 	setReadFn.Invoke(js.FuncOf(func(this js.Value, args []js.Value) any {
 		input := args[0].String()
@@ -566,10 +578,25 @@ func (i *jsIPN) fetch(url string) js.Value {
 
 type termWriter struct {
 	f js.Value
+	// The start of a UTF-8 sequence that the next write finishes. Passing it
+	// on alone would turn it into replacement characters.
+	pending []byte
 }
 
-func (w termWriter) Write(p []byte) (n int, err error) {
-	r := bytes.Replace(p, []byte("\n"), []byte("\n\r"), -1)
+func (w *termWriter) Write(p []byte) (n int, err error) {
+	buf := append(w.pending, p...)
+	end := len(buf)
+	for i := len(buf) - 1; i >= 0 && i >= len(buf)-utf8.UTFMax; i-- {
+		if utf8.RuneStart(buf[i]) {
+			if !utf8.FullRune(buf[i:]) {
+				end = i
+			}
+			break
+		}
+	}
+
+	w.pending = bytes.Clone(buf[end:])
+	r := bytes.Replace(buf[:end], []byte("\n"), []byte("\n\r"), -1)
 	w.f.Invoke(string(r))
 	return len(p), nil
 }

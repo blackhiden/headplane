@@ -1,14 +1,10 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { createOidcService, type OidcConfig } from "~/server/oidc/provider";
 
-import { type DexEnv, startDex } from "./start-dex";
+import { startDex } from "../../harness/dex";
 
-vi.mock("~/utils/log", () => ({
-  default: { warn: vi.fn(), error: vi.fn(), debug: vi.fn(), info: vi.fn() },
-}));
-
-let dex: DexEnv;
+let dex: Awaited<ReturnType<typeof startDex>>;
 
 beforeAll(async () => {
   dex = await startDex();
@@ -28,6 +24,7 @@ function dexConfig(overrides?: Partial<OidcConfig>): OidcConfig {
     clientId: "test-client",
     clientSecret: "test-secret",
     baseUrl: "http://localhost",
+    basePath: "/admin",
     authorizationEndpoint: `${dex.issuerUrl}/auth`,
     tokenEndpoint: `${dex.issuerUrl}/token`,
     userinfoEndpoint: `${dex.issuerUrl}/userinfo`,
@@ -57,6 +54,7 @@ describe("discovery against real Dex", () => {
       clientId: "test-client",
       clientSecret: "test-secret",
       baseUrl: "http://localhost",
+      basePath: "/admin",
     });
 
     const result = await svc.discover();

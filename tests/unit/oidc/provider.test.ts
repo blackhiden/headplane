@@ -2,13 +2,9 @@ import { generateKeyPairSync, sign, type KeyObject } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 
 import { SignJWT, exportJWK, generateKeyPair } from "jose";
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { createOidcService, type OidcConfig } from "~/server/oidc/provider";
-
-vi.mock("~/utils/log", () => ({
-  default: { warn: vi.fn(), error: vi.fn(), debug: vi.fn(), info: vi.fn() },
-}));
 
 let server: Server;
 let baseUrl: string;
@@ -149,6 +145,7 @@ function testConfig(overrides?: Partial<OidcConfig>): OidcConfig {
     clientId: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
     baseUrl: "https://headplane.example.com",
+    basePath: "/admin",
     ...overrides,
   };
 }
@@ -290,6 +287,19 @@ describe("invalidate and reload", () => {
 });
 
 describe("startFlow", () => {
+  test("uses the configured dashboard path for callback and logout", async () => {
+    const svc = createOidcService(testConfig({ basePath: "/tools/web" }));
+    const result = await svc.startFlow();
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(new URL(result.value.url).searchParams.get("redirect_uri")).toBe(
+      "https://headplane.example.com/tools/web/oidc/callback",
+    );
+    expect(
+      new URL(svc.buildEndSessionUrl("token")!).searchParams.get("post_logout_redirect_uri"),
+    ).toBe("https://headplane.example.com/tools/web/login?s=logout");
+  });
+
   test("builds authorization URL with required params", async () => {
     const svc = createOidcService(testConfig());
     const result = await svc.startFlow();

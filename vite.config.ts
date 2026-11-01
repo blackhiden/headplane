@@ -5,18 +5,12 @@ import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { cn } from "cn/vite";
 import { defineConfig } from "vite";
-import { parse } from "yaml";
 
-import { headplaneDevServer } from "./runtime/vite-plugin.ts";
+import { headplaneDevServer } from "./runtime/vite-plugin";
 
 const PROD_ENTRY = "./app/server/main.ts";
 const DEV_ENTRY = "./app/server/app.ts";
 const REACT_ROUTER_SSR_NO_EXTERNAL = ["@react-router/node", "react-router"];
-
-const PREFIX = process.env.__INTERNAL_PREFIX || "/admin";
-if (PREFIX.endsWith("/")) {
-  throw new Error("Prefix must not end with a slash");
-}
 
 // Derive version: HEADPLANE_VERSION env > git describe > package.json
 const isNext = process.env.IMAGE_TAG?.includes("next");
@@ -33,65 +27,24 @@ if (process.env.HEADPLANE_VERSION) {
       .replace(/^v/, "");
     VERSION = describe === tag ? tag : `${tag}-dev+${describe.split("-").pop()}`;
   } catch {
-    try {
-      const pkg = await readFile("package.json", "utf-8");
-      VERSION = JSON.parse(pkg).version;
-    } catch {
-      VERSION = "dev-build";
-    }
+    const pkg = await readFile("package.json", "utf-8");
+    VERSION = JSON.parse(pkg).version;
   }
-}
-
-// Derive commit hash: HEADPLANE_COMMIT env > git rev-parse > unknown
-let COMMIT_HASH: string;
-if (process.env.HEADPLANE_COMMIT) {
-  COMMIT_HASH = process.env.HEADPLANE_COMMIT;
-} else {
-  try {
-    COMMIT_HASH = execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
-  } catch {
-    COMMIT_HASH = "unknown";
-  }
-}
-
-// Derive build time: HEADPLANE_BUILD_TIME env > current time
-let BUILD_TIME: string;
-if (process.env.HEADPLANE_BUILD_TIME) {
-  BUILD_TIME = process.env.HEADPLANE_BUILD_TIME;
-} else {
-  BUILD_TIME = new Date().toISOString();
 }
 
 if (!VERSION) {
   throw new Error("Unable to determine version");
 }
 
-// Load the config without any environment variables (not needed here)
-const configPath = process.env.HEADPLANE_CONFIG_PATH || "config.example.yaml";
-let config: string;
-try {
-  config = await readFile(configPath, "utf-8");
-} catch (err) {
-  // If the e2e config doesn't exist yet (global setup hasn't run),
-  // fall back to the example config
-  if (configPath !== "config.example.yaml") {
-    console.warn(`Config file ${configPath} not found, falling back to config.example.yaml`);
-    config = await readFile("config.example.yaml", "utf-8");
-  } else {
-    throw err;
-  }
-}
-const { server } = parse(config);
-
 export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
 
   return {
-    base: command === "build" ? `${PREFIX}/` : undefined,
+    // Relative imports let one build run under any configured path.
+    base: command === "build" ? "./" : undefined,
     plugins: [
       headplaneDevServer({
         entry: DEV_ENTRY,
-        basename: PREFIX,
         publicDir: new URL("./public", import.meta.url).pathname,
       }),
       reactRouter(),
@@ -103,8 +56,8 @@ export default defineConfig(({ command }) => {
       }),
     ],
     server: {
-      host: server.host,
-      port: server.port,
+      host: "0.0.0.0",
+      port: 3000,
     },
     resolve: {
       tsconfigPaths: true,
@@ -150,9 +103,6 @@ export default defineConfig(({ command }) => {
     },
     define: {
       __VERSION__: JSON.stringify(isNext ? `${VERSION}-next` : VERSION),
-      __PREFIX__: JSON.stringify(PREFIX),
-      __COMMIT_HASH__: JSON.stringify(COMMIT_HASH),
-      __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     },
   };
 });
