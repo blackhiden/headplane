@@ -161,10 +161,8 @@ function DialogOverlay({ children }: { children: React.ReactNode }) {
 // Dialog Title component
 export function DialogTitle({ children, ...props }: React.ComponentPropsWithoutRef<"h2">) {
   return (
-    <BaseAlertDialog.Title asChild>
-      <h2 className={cn("text-lg font-semibold")} {...props}>
-        {children}
-      </h2>
+    <BaseAlertDialog.Title className={cn("text-lg font-semibold")} {...props}>
+      {children}
     </BaseAlertDialog.Title>
   );
 }
@@ -172,10 +170,8 @@ export function DialogTitle({ children, ...props }: React.ComponentPropsWithoutR
 // Dialog Description component
 export function DialogDescription({ children, ...props }: React.ComponentPropsWithoutRef<"p">) {
   return (
-    <BaseAlertDialog.Description asChild>
-      <p className={cn("text-muted text-sm")} {...props}>
-        {children}
-      </p>
+    <BaseAlertDialog.Description className={cn("text-muted text-sm")} {...props}>
+      {children}
     </BaseAlertDialog.Description>
   );
 }
