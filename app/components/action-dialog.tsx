@@ -120,10 +120,9 @@ export default function ActionDialog({
             <DialogActions>
               <DialogClose disabled={isPending} render={<Button>Cancel</Button>} />
               <Button
-                disabled={isDisabled}
-                pending={isPending}
+                disabled={isDisabled || isPending}
                 type="submit"
-                variant={isDestructive ? "danger" : "primary"}
+                variant={isDestructive ? "danger" : "heavy"}
               >
                 {submitLabel}
               </Button>

@@ -1,5 +1,14 @@
 # Next
 
+## Fixes
+
+- Fixed the "Register Machine" modal on `/admin/machines` failing to render correctly
+  with broken Cancel and Register buttons. The issue was caused by TypeScript API
+  incompatibilities introduced during the v1.0.13 UI refactor: `ActionDialog` used
+  invalid `variant="primary"` and unsupported `pending` prop on buttons, and
+  `DialogTitle`/`DialogDescription` used deprecated `asChild` prop no longer
+  supported by Base UI.
+
 # v1.0.13 (October 26, 2026)
 
 ## Changes
