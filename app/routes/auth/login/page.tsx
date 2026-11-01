@@ -1,9 +1,8 @@
-import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Form, Link as RouterLink, redirect, useSearchParams } from "react-router";
+import { Form, Link as RouterLink, redirect, useNavigation, useSearchParams } from "react-router";
 
 import Button from "~/components/button";
-import Card from "~/components/card";
+import Callout from "~/components/callout";
 import Code from "~/components/code";
 import Input from "~/components/input";
 import Link from "~/components/link";
@@ -17,6 +16,7 @@ import { loginAction } from "./action";
 import { OidcConfigErrorNotice, OidcDiscoveryFailedNotice } from "./config-error";
 import Logout from "./logout";
 import { OidcErrorNotice } from "./oidc-error";
+import Shell from "./shell";
 
 export async function loader({ request, context, url }: Route.LoaderArgs) {
   const auth = context.get(authContext);
@@ -80,29 +80,27 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
   const { isCookieSecureEnabled, isOidcConnectorEnabled, oidcErrorCodes, urlState } = loaderData;
 
   const [showCookieWarning, setShowCookieWarning] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<"api_key" | "password">("password");
-  const [showPassword, setShowPassword] = useState(false);
   const [params] = useSearchParams();
-  const { pause } = useLiveData();
+  const { pause, resume } = useLiveData();
+  const navigation = useNavigation();
 
+  // There's no session to stream live data with until sign-in finishes.
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    // This page does NOT need stale while revalidate logic
     pause();
+    return resume;
+  }, [pause, resume]);
 
+  useEffect(() => {
     if (isCookieSecureEnabled && window.location.protocol !== "https:") {
       setShowCookieWarning(true);
     }
-  });
+  }, [isCookieSecureEnabled]);
 
   useEffect(() => {
     // State is a one time thing, we need to remove it after it has
-    // Been consumed to prevent logic loops.
-    if (urlState !== null) {
+    // Been consumed to prevent logic loops. The logout marker stays so a
+    // reload doesn't auto-redirect into OIDC and silently sign back in.
+    if (urlState !== undefined && urlState !== "logout") {
       const searchParams = new URLSearchParams(params);
       searchParams.delete("s");
 
@@ -110,7 +108,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
       // We can't use the useSearchParams method since it revalidates
       // Which will trigger a full reload
       const newUrl = searchParams.toString()
-        ? `{${window.location.pathname}?${searchParams.toString()}`
+        ? `${window.location.pathname}?${searchParams.toString()}`
         : window.location.pathname;
 
       window.history.replaceState(null, "", newUrl);
@@ -121,128 +119,68 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
     return <Logout />;
   }
 
+  const notice = urlState?.startsWith("error_") ? (
+    <OidcErrorNotice code={urlState} />
+  ) : oidcErrorCodes.includes("discovery_failed") ? (
+    <OidcDiscoveryFailedNotice />
+  ) : oidcErrorCodes.length > 0 ? (
+    <OidcConfigErrorNotice errors={oidcErrorCodes} />
+  ) : showCookieWarning ? (
+    <Callout className="mb-6" title="Sign-in won't work over HTTP" variant="error">
+      Headplane is set to use secure cookies, but this page was loaded over an insecure connection.{" "}
+      <Link external styled to="https://headplane.net/troubleshooting#signing-in-does-nothing">
+        Docs
+      </Link>
+    </Callout>
+  ) : undefined;
+
   return (
-    <div className="flex h-screen w-screen items-center justify-center">
-      <div>
-        {urlState?.startsWith("error_") ? (
-          <OidcErrorNotice code={urlState} />
-        ) : oidcErrorCodes.includes("discovery_failed") ? (
-          <OidcDiscoveryFailedNotice />
-        ) : oidcErrorCodes.length > 0 ? (
-          <OidcConfigErrorNotice errors={oidcErrorCodes} />
-        ) : showCookieWarning ? (
-          <Card className="border-bad m-4 mb-4 max-w-md border sm:m-0 sm:mb-4">
-            <div className="flex items-center justify-between gap-4">
-              <Card.Title className="text-bad">Configuration Issue</Card.Title>
-              <AlertCircle className="text-bad mb-2 h-6 w-6" />
-            </div>
-            {showCookieWarning ? (
-              <Card.Text className="text-sm">
-                Headplane is configured to use secure cookies, but this site is being served over an
-                insecure connection and login will not work correctly.{" "}
-                <Link
-                  external
-                  styled
-                  to="https://headplane.net/configuration/common-issues#issue-logging-in-does-not-do-anything"
-                >
-                  Learn more.
-                </Link>
-              </Card.Text>
-            ) : undefined}
-          </Card>
-        ) : undefined}
-        <Card className="m-4 max-w-md sm:m-0">
-          <Card.Title>Welcome to Headplane</Card.Title>
-
-          {/* Login method toggle */}
-          <div className="mb-4 flex gap-2">
-            <Button
-              type="button"
-              disabled={!isHydrated}
-              variant={loginMethod === "password" ? "heavy" : "light"}
-              onClick={() => setLoginMethod("password")}
-              className="flex-1"
-            >
-              Password
-            </Button>
-            <Button
-              type="button"
-              disabled={!isHydrated}
-              variant={loginMethod === "api_key" ? "heavy" : "light"}
-              onClick={() => setLoginMethod("api_key")}
-              className="flex-1"
-            >
-              API Key
-            </Button>
+    <Shell title="Sign in to Headplane">
+      {notice}
+      {isOidcConnectorEnabled && (
+        <>
+          <Button
+            className="w-full"
+            nativeButton={false}
+            render={<RouterLink prefetch="none" reloadDocument to="/oidc/start" />}
+            variant="primary"
+          >
+            Continue with SSO
+          </Button>
+          <div className="text-muted my-6 flex items-center gap-3 text-xs">
+            <span className="bg-line h-px flex-1" />
+            or
+            <span className="bg-line h-px flex-1" />
           </div>
-
-          <Form method="POST">
-            {loginMethod === "password" ? (
-              <>
-                <Card.Text>Enter your username and password to sign in.</Card.Text>
-                <Input
-                  className="mt-8 mb-2"
-                  required
-                  label="Username"
-                  labelHidden
-                  name="username"
-                  placeholder="Username"
-                  type="text"
-                  autoComplete="username"
-                />
-                <div className="relative mb-2">
-                  <Input
-                    required
-                    label="Password"
-                    labelHidden
-                    name="password"
-                    placeholder="Password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    disabled={!isHydrated}
-                    onClick={() => setShowPassword((visible) => !visible)}
-                    className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2 text-sm disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <Card.Text>
-                  Enter an API key to authenticate with Headplane. You can generate one by running{" "}
-                  <Code>headscale apikeys create</Code> in your terminal.
-                </Card.Text>
-                <Input
-                  className="mt-8 mb-2"
-                  required
-                  label="API Key"
-                  labelHidden
-                  name="api_key"
-                  placeholder="API Key"
-                  type="password"
-                />
-              </>
-            )}
-            {actionData?.success === false ? (
-              <Card.Text className="text-bad mb-2 text-sm">{actionData.message}</Card.Text>
-            ) : undefined}
-            <Button className="w-full" type="submit" variant="heavy">
-              Sign In
-            </Button>
-          </Form>
-          {isOidcConnectorEnabled ? (
-            <RouterLink to="/oidc/start" prefetch="none" reloadDocument>
-              <Button className="mt-2 w-full" disabled={oidcErrorCodes.length > 0} variant="light">
-                Single Sign-On
-              </Button>
-            </RouterLink>
-          ) : undefined}
-        </Card>
-      </div>
-    </div>
+        </>
+      )}
+      <Form className="flex flex-col gap-3" method="POST">
+        <Input
+          autoComplete="current-password"
+          errorMessage={actionData?.success === false ? actionData.message : undefined}
+          invalid={actionData?.success === false}
+          label="API key"
+          labelTooltip={
+            <>
+              Create one by running{" "}
+              <Code className="whitespace-nowrap">headscale apikeys create</Code> on your Headscale
+              server.
+            </>
+          }
+          name="api_key"
+          placeholder="hskey-api-…"
+          required
+          type="password"
+        />
+        <Button
+          className="w-full"
+          pending={navigation.state === "submitting"}
+          type="submit"
+          variant={isOidcConnectorEnabled ? "secondary" : "primary"}
+        >
+          Sign in with API key
+        </Button>
+      </Form>
+    </Shell>
   );
 }

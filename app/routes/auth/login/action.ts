@@ -1,7 +1,7 @@
 import { redirect } from "react-router";
 
-import { authContext, headscaleContext, localAdminContext } from "~/server/context";
-import { isDataWithApiError } from "~/server/headscale/api/error-client";
+import { authContext, headscaleContext } from "~/server/context";
+import { headscaleErrorMessage, isDataWithApiError } from "~/server/headscale/api/error-client";
 import log from "~/utils/log";
 
 import type { Route } from "./+types/page";
@@ -9,68 +9,19 @@ import type { Route } from "./+types/page";
 export async function loginAction({ request, context }: Route.LoaderArgs) {
   const auth = context.get(authContext);
   const headscale = context.get(headscaleContext);
-  const localAdmin = context.get(localAdminContext);
 
   const formData = await request.formData();
-  const apiKey = formData.has("api_key") ? String(formData.get("api_key")) : undefined;
-  const username = formData.has("username") ? String(formData.get("username")) : undefined;
-  const password = formData.has("password") ? String(formData.get("password")) : undefined;
+  const apiKey = formData.has("api_key") ? String(formData.get("api_key")).trim() : undefined;
 
-  // Password login flow - use local admin service if available
-  if (password !== undefined) {
-    if (!username || username.length === 0) {
-      log.warn("auth", "Request made with empty username");
-      return {
-        success: false,
-        message: "Username cannot be empty. Please enter a valid username.",
-      };
-    }
-
-    if (password.length === 0) {
-      log.warn("auth", "Request made with empty password");
-      return {
-        success: false,
-        message: "Password cannot be empty. Please enter a valid password.",
-      };
-    }
-
-    // Use local admin authentication if configured
-    if (localAdmin.state === "enabled") {
-      const result = await localAdmin.value.authenticate(username, password);
-      if (!result.success) {
-        log.warn("auth", "Local admin authentication failed for user: %s", username);
-        return {
-          success: false,
-          message: result.error || "Invalid username or password",
-        };
-      }
-
-      // Create a password session with configured service API key
-      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-      return redirect("/machines", {
-        headers: {
-          "Set-Cookie": await auth.createPasswordSession("local-admin-token", username, maxAge),
-        },
-      });
-    }
-
-    // Local admin mode not configured
-    return {
-      success: false,
-      message: "Password authentication is not available",
-    };
-  }
-
-  // API key login flow (existing logic)
   if (apiKey === undefined) {
-    log.warn("auth", "Request made without API key or password");
+    log.warn("auth", "Request made without API key");
     log.warn(
       "auth",
       "If this is unexpected, ensure your reverse proxy (if applicable) is configured correctly",
     );
     return {
       success: false,
-      message: "Missing API key or password. Please enter your credentials.",
+      message: "Enter an API key.",
     };
   }
 
@@ -82,7 +33,15 @@ export async function loginAction({ request, context }: Route.LoaderArgs) {
     );
     return {
       success: false,
-      message: "API key cannot be empty. Please enter a valid API key.",
+      message: "Enter an API key.",
+    };
+  }
+
+  // We need to make sure this is safe for HTTP headers
+  if (!/^[\x21-\x7e]+$/.test(apiKey)) {
+    return {
+      success: false,
+      message: "That API key is invalid or has expired.",
     };
   }
 
@@ -101,7 +60,7 @@ export async function loginAction({ request, context }: Route.LoaderArgs) {
     if (!lookup) {
       return {
         success: false,
-        message: "API key was not found in the Headscale database",
+        message: "That API key doesn't exist on this server.",
       };
     }
 
@@ -109,7 +68,7 @@ export async function loginAction({ request, context }: Route.LoaderArgs) {
       log.error("auth", "Got an API key without an expiration");
       return {
         success: false,
-        message: "API key is malformed (missing expiration). Please generate a new API key.",
+        message: "That API key has no expiration. Create a new one.",
       };
     }
 
@@ -117,7 +76,7 @@ export async function loginAction({ request, context }: Route.LoaderArgs) {
     if (expiry.getTime() < Date.now()) {
       return {
         success: false,
-        message: "API key has expired",
+        message: "That API key has expired.",
       };
     }
 
@@ -142,16 +101,20 @@ export async function loginAction({ request, context }: Route.LoaderArgs) {
       ) {
         return {
           success: false,
-          message: "API key is invalid (it may be incorrect or expired)",
+          message: "That API key is invalid or has expired.",
         };
       }
     }
 
-    log.error("auth", "Error while validating API key: %s", error);
+    log.error(
+      "auth",
+      "Error while validating API key: %s",
+      headscaleErrorMessage(error) ?? String(error),
+    );
     log.debug("auth", "Error details: %o", error);
     return {
       success: false,
-      message: "Error while validating API key (see logs for details)",
+      message: "Couldn't check the API key. See the server logs.",
     };
   }
 }

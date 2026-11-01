@@ -1,6 +1,6 @@
-import { Cog, Ellipsis, SquareTerminal } from "lucide-react";
+import { ChevronDown, Ellipsis, SquareTerminal } from "lucide-react";
 import { useState } from "react";
-import { useSubmit } from "react-router";
+import { useHref } from "react-router";
 
 import Button from "~/components/button";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "~/components/menu";
@@ -10,9 +10,9 @@ import { isNoExpiry, type PopulatedNode } from "~/utils/node-info";
 
 import Delete from "../dialogs/delete";
 import Expire from "../dialogs/expire";
+import KeyExpiry from "../dialogs/key-expiry";
 import Move from "../dialogs/move";
 import Rename from "../dialogs/rename";
-import RotateKey from "../dialogs/rotate-key";
 import Routes from "../dialogs/routes";
 import Tags from "../dialogs/tags";
 
@@ -28,7 +28,7 @@ interface MenuProps {
   supportsDisablingKeyExpiry: boolean;
 }
 
-type Modal = "rename" | "expire" | "remove" | "routes" | "move" | "tags" | "rotate_key" | null;
+type Modal = "rename" | "expire" | "remove" | "routes" | "move" | "tags" | "key-expiry" | null;
 
 export default function MachineMenu({
   node,
@@ -41,24 +41,15 @@ export default function MachineMenu({
   supportsNodeOwnerChange,
   supportsDisablingKeyExpiry,
 }: MenuProps) {
-  const submit = useSubmit();
   const [modal, setModal] = useState<Modal>(null);
+  const sshUrl = useHref(`/ssh/${node.givenName}`);
   const supportsTailscaleSSH = node.hostInfo?.sshHostKeys && node.hostInfo?.sshHostKeys.length > 0;
 
   return (
-    <div className="flex items-center justify-end gap-1.5 px-4">
+    <div className="flex items-center justify-end gap-1.5">
       {modal === "remove" && (
         <Delete
           isOpen={modal === "remove"}
-          machine={node}
-          setIsOpen={(isOpen) => {
-            if (!isOpen) setModal(null);
-          }}
-        />
-      )}
-      {modal === "rotate_key" && (
-        <RotateKey
-          isOpen={modal === "rotate_key"}
           machine={node}
           setIsOpen={(isOpen) => {
             if (!isOpen) setModal(null);
@@ -94,6 +85,15 @@ export default function MachineMenu({
           }}
         />
       )}
+      {modal === "key-expiry" && (
+        <KeyExpiry
+          isOpen
+          machine={node}
+          setIsOpen={(isOpen) => {
+            if (!isOpen) setModal(null);
+          }}
+        />
+      )}
       {modal === "tags" && (
         <Tags
           existingTags={existingTags}
@@ -118,36 +118,27 @@ export default function MachineMenu({
       {supportsTailscaleSSH ? (
         isFullButton ? (
           <Button
-            className="flex items-center gap-x-2"
             onClick={() => {
               // We need to use JS to open the SSH URL
               // in a new WINDOW since href can only
               // do a new TAB.
-              window.open(
-                `${__PREFIX__}/ssh/${node.givenName}`,
-                "_blank",
-                "noopener,noreferrer,width=800,height=600",
-              );
+              window.open(sshUrl, "_blank", "noopener,noreferrer,width=800,height=600");
             }}
-            variant="heavy"
+            variant="primary"
           >
-            <SquareTerminal className="h-5" />
-            <p>SSH</p>
+            <SquareTerminal className="size-3.5" />
+            SSH
           </Button>
         ) : (
           <Button
             className={cn(
-              "py-0.5 rounded-lg",
               "opacity-0 pointer-events-none group-hover:opacity-100",
               "group-hover:pointer-events-auto",
             )}
-            variant="light"
+            size="sm"
+
             onClick={() => {
-              window.open(
-                `${__PREFIX__}/ssh/${node.givenName}`,
-                "_blank",
-                "noopener,noreferrer,width=800,height=600",
-              );
+              window.open(sshUrl, "_blank", "noopener,noreferrer,width=800,height=600");
             }}
           >
             SSH
@@ -156,37 +147,25 @@ export default function MachineMenu({
       ) : undefined}
       <Menu disabled={isDisabled}>
         <MenuTrigger
-          aria-label={`Machine settings for ${node.givenName}`}
           className={
             isFullButton
-              ? "border-line bg-surface hover:bg-subtle gap-x-2 rounded-md border px-3.5 py-2 text-sm font-medium"
-              : "hover:bg-subtle w-10 rounded-full bg-transparent p-1"
+              ? "border-line-strong bg-surface hover:bg-hover h-8 gap-x-1.5 rounded-md border px-3 text-sm font-medium"
+              : "text-muted hover:bg-hover hover:text-fg size-7 rounded-md"
           }
         >
           {isFullButton ? (
             <>
-              <Cog className="h-5" />
-              <p>Machine Settings</p>
+              Manage
+              <ChevronDown className="size-3.5" />
             </>
           ) : (
-            <Ellipsis className="h-5" />
+            <Ellipsis className="size-4" />
           )}
         </MenuTrigger>
         <MenuContent>
           <MenuItem onClick={() => setModal("rename")}>Edit machine name</MenuItem>
           {supportsDisablingKeyExpiry && (
-            <MenuItem
-              onClick={() =>
-                submit(
-                  {
-                    action_id: "toggle_expiry",
-                    node_id: node.id,
-                    disableExpiry: !isNoExpiry(node.expiry),
-                  },
-                  { method: "post" },
-                )
-              }
-            >
+            <MenuItem onClick={() => setModal("key-expiry")}>
               {isNoExpiry(node.expiry) ? "Enable" : "Disable"} key expiry
             </MenuItem>
           )}
@@ -196,7 +175,6 @@ export default function MachineMenu({
             <MenuItem onClick={() => setModal("move")}>Change owner</MenuItem>
           )}
           <MenuSeparator />
-          <MenuItem onClick={() => setModal("rotate_key")}>Rotate key</MenuItem>
           {!isNoExpiry(node.expiry) && (
             <MenuItem variant="danger" disabled={node.expired} onClick={() => setModal("expire")}>
               Expire
