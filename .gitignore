@@ -35,3 +35,4 @@ session.md
 !/INITIAL_PROMPT.md
 !/docs/development/parallel-worktrees.md
 merge-worktrees.sh
+docs/.vitepress/dist/
