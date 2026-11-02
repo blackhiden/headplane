@@ -17,13 +17,11 @@ Add a new section to the Headplane admin page (`/admin/admin`) that displays tec
 ## Files to Create/Modify
 
 ### New files:
-
 - `app/routes/api/admin/server-info.ts` — Admin-only API endpoint that returns merged server info
 - `app/components/server-info-card.tsx` — Reusable card component for displaying server info
 - `app/routes/admin/components/technical-info-section.tsx` — The technical info section component
 
 ### Modified files:
-
 - `app/routes/admin/route.tsx` — Add the technical info section to the admin page
 - `app/server/headscale/api/index.ts` — Add `serverInfo()` method to the Headscale client
 - `app/server/headscale/api/resources/server-info.ts` — New resource for the server-info API
@@ -119,8 +117,8 @@ npx vitest run tests/component
 4. No sensitive info is exposed.
 5. UI handles missing/unavailable data gracefully.
 6. All tests pass.
-   and update the configured API key without opening a terminal or editing the
-   config file.
+and update the configured API key without opening a terminal or editing the
+config file.
 
 ## Objective
 

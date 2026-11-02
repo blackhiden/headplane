@@ -46,9 +46,9 @@ You are assigned to implement the frontend Admin Technical Info section for Phas
 - Use the existing design system and components.
 - No sensitive information (API keys, passwords, tokens, private keys) may be exposed.
 - The endpoint must require admin authentication.
-  reset and Headscale API key management (create/delete), but there is no way to
-  update the **configured service key** that Headplane itself uses to talk to
-  Headscale.
+reset and Headscale API key management (create/delete), but there is no way to
+update the **configured service key** that Headplane itself uses to talk to
+Headscale.
 
 ## What to Do
 
