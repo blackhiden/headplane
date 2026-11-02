@@ -33,6 +33,31 @@ describe("machines on a real tailnet", () => {
     return app.call(machineAction, "/machines", { as: owner, form });
   }
 
+  test("loader shows user-friendly error when Headscale API is unavailable", async () => {
+    // Stop the Headscale container to simulate API unavailability
+    await tailnet.server.container.stop();
+
+    try {
+      await app.call(machinesLoader, "/machines", { as: owner });
+      // Should not reach here - expect an error to be thrown
+      expect.fail("Expected loader to throw an error when Headscale is down");
+    } catch (error) {
+      // Verify the error message is user-friendly and actionable
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe(
+        "Unable to load machines from Headscale. Please check that Headscale is running and accessible.",
+      );
+    } finally {
+      // Restart Headscale for other tests
+      await tailnet.server.container.restart();
+      // Wait for Headscale to be ready
+      await waitFor("Headscale to come back online", async () => {
+        const result = await app.call(machinesLoader, "/machines", { as: owner });
+        expect(result).toBeDefined();
+      });
+    }
+  });
+
   test("a waiting machine registered from its URL comes online for that user", async () => {
     const pending = await tailnet.pendingNode({ name: "laptop" });
     const result = await machine({
