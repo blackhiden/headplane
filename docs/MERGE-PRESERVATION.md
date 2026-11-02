@@ -65,17 +65,74 @@ user-friendly alternative to manual registration workflows.
 
 See `app/components/qr-scanner/README.md` for complete documentation.
 
-### 3. Documentation
+### 3. Local Administrator Authentication (`app/server/auth/local-admin.ts`)
+
+**Status:** Critical fork feature — DO NOT REMOVE
+
+Enables administrative authentication using a username and password instead of requiring a raw Headscale API key or external OIDC single sign-on provider. This feature provides a standalone, secure login mechanism for self-hosted deployments. It includes bcrypt cost-12 hash enforcement, brute-force rate limiting, profile management, and automatic session invalidation.
+
+- **Location & Key Files:**
+  - `app/server/auth/local-admin.ts` — `createLocalAdminService` factory and `LocalAdminService` interface managing username/password verification, rate limiting (max 5 failed attempts per 15-minute sliding window per username), and dynamic credential updates.
+  - `app/server/auth/bcrypt-utils.ts` — Bcrypt utilities enforcing cost-12 hashes (`validateBcryptHash`), password verification (`verifyPassword`), and hashing (`hashPassword`).
+  - `app/server/context.ts` — Dependency injection container exposing `localAdminContext`, building `LocalAdminService` when `config.user` is defined, and enforcing mutual exclusivity (disabling OIDC and proxy authentication when local admin mode is active).
+  - `app/server/config/config-schema.ts` & `app/server/config/load.ts` — ArkType schema and config loader validating `user.username`, `user.password` (bcrypt cost 12), `user.password_path`, `user.name`, and `user.avatar`.
+  - `app/server/config/write.ts` — `updateConfig` helper writing configuration changes atomically with private timestamped backups (`.bak.<timestamp>`) and atomic file replacement.
+  - `app/server/db/schema.ts` & `app/server/web/auth.ts` — Database schema supporting `authSessions` with `kind = 'password'`, `createPasswordSession`, and `invalidatePasswordSessions()` which revokes all active password sessions upon credential changes.
+  - `app/routes/auth/login/action.ts` & `app/routes/auth/login/page.tsx` — Login interface offering username/password authentication alongside API key login.
+  - `app/routes/admin/admin/users/route.tsx` — Local administrator profile administration UI allowing username, name, avatar, and password updates.
+  - `app/routes/admin/route.tsx` — Administration panel exposing masked Headscale API key view/edit for local administrators.
+  - CLI management tools:
+    - `cmd/headplane-hash-password.ts` — CLI tool generating bcrypt cost-12 hashes from stdin (`headplane hash-password --password-stdin`).
+    - `cmd/headplane-reset-local-admin-password.ts` — CLI tool resetting administrator passwords when config is read-only or in headless environments.
+    - `cmd/headplane-migrate-local-admin.ts` — CLI tool migrating legacy Headscale database users to `config.yaml`.
+- **Tests:**
+  - `tests/unit/auth/local-admin.test.ts` — Rate limiting, credential validation, update verification.
+  - `tests/unit/auth/bcrypt-utils.test.ts` — Bcrypt cost-12 validation and password verification.
+  - `tests/unit/auth/password-login-action.test.ts` — Login action handling, error handling, session cookie issuance.
+  - `tests/unit/auth/session-invalidation.test.ts` — Password session revocation in SQLite.
+  - `tests/unit/routes/admin-users.test.ts` — Admin profile loader, profile action, password action.
+  - `tests/unit/server/config/user-fields.test.ts` — Configuration schema validation for user fields.
+  - `tests/integration/cli/reset-password.test.ts` — CLI reset tool execution and config updates.
+  - `tests/integration/cli/migrate-local-admin.test.ts` — CLI migration from legacy database.
+- **Why It Is Vulnerable During Upstream Merges:**
+  - Upstream Headscale web UI does not support username/password authentication (only API keys and OIDC).
+  - Merging upstream updates into shared files (`app/server/context.ts`, `app/routes/auth/login/action.ts`, `app/routes/auth/login/page.tsx`, `app/server/web/auth.ts`) can silently discard the `localAdmin` context, login form toggle, or `kind = 'password'` session handling.
+  - Standalone fork files (`app/server/auth/local-admin.ts`, `app/server/auth/bcrypt-utils.ts`, `cmd/headplane-*.ts`) can be orphaned or accidentally deleted if not protected.
+- **Protection:**
+  - Explicit file and context preservation across all upstream merges.
+  - Comprehensive unit and integration test coverage verifying authentication, session lifecycle, and CLI utilities.
+- **CI Check:**
+  - Verify `app/server/auth/local-admin.ts` exists
+  - Verify `app/server/auth/bcrypt-utils.ts` exists
+  - Verify `cmd/headplane-hash-password.ts` exists
+  - Verify `cmd/headplane-reset-local-admin-password.ts` exists
+- **Restoration:**
+  If accidentally removed or overwritten during an upstream merge:
+  ```bash
+  git checkout <last-good-commit> -- \
+    app/server/auth/local-admin.ts \
+    app/server/auth/bcrypt-utils.ts \
+    cmd/headplane-hash-password.ts \
+    cmd/headplane-reset-local-admin-password.ts \
+    cmd/headplane-migrate-local-admin.ts \
+    app/routes/admin/admin/users/route.tsx
+  ```
+  And re-verify integration in `app/server/context.ts`, `app/server/web/auth.ts`, and `app/routes/auth/login/action.ts`.
+
+See `docs/configuration/index.md#local-administrator-profile` for complete documentation.
+
+### 4. Documentation
 
 Fork-specific documentation that must be preserved:
 
 - **`CODE_GRAPH.md`** — High-level codebase structure and architecture map
   (deleted upstream, kept locally)
+- **`SCHEMA.md`** — Database and configuration schema documentation
 - **`docs/MERGE-PRESERVATION.md`** — This document
 - **`session.md`** — Session continuity and working context
 - **`ROADMAP.md`** — Fork-specific roadmap and feature tracking
 
-### 3. Navigation and Routes
+### 5. Navigation and Routes
 
 Additional navigation tabs and routes not present in upstream:
 
@@ -85,8 +142,9 @@ Additional navigation tabs and routes not present in upstream:
 - `/instances` — Multi-instance dashboard
 - `/audit` — Audit log viewer
 - `/admin` — Administration panel with API key management
+- `/admin/admin/users` — Local administrator profile and password management
 
-### 4. UI Components
+### 6. UI Components
 
 Fork-specific UI components in `app/components/`:
 
@@ -98,7 +156,7 @@ Fork-specific UI components in `app/components/`:
 
 Note: The `qr-scanner/` component is documented separately above as a critical feature.
 
-### 5. Design System Enhancements
+### 7. Design System Enhancements
 
 Fork-specific design tokens and theme system:
 
@@ -108,16 +166,16 @@ Fork-specific design tokens and theme system:
 - Backdrop blur effects on header and footer
 - Sticky header with active pill indicators
 
-### 6. Backend Features
+### 8. Backend Features
 
 Fork-specific backend functionality:
 
 - `/api/admin/server-info` — Merged server info endpoint
 - `/api/v1/derp` — DERP status endpoint (fork-only, returns 404 on upstream)
-- Enhanced authentication and session management
+- Enhanced authentication and session management (local admin and password sessions)
 - Config file atomic updates with backup
 
-### 7. Agent Enhancements
+### 9. Agent Enhancements
 
 Fork-specific Headplane Agent improvements:
 
@@ -162,9 +220,15 @@ Fork-specific Headplane Agent improvements:
 3. **Check for silent deletions**:
 
    ```bash
-   # Verify critical directories exist
+   # Verify critical directories and files exist
    test -d app/update-check || echo "ERROR: update-check deleted"
+   test -d app/components/qr-scanner || echo "ERROR: qr-scanner deleted"
+   test -f app/server/auth/local-admin.ts || echo "ERROR: local-admin.ts deleted"
+   test -f app/server/auth/bcrypt-utils.ts || echo "ERROR: bcrypt-utils.ts deleted"
+   test -f cmd/headplane-hash-password.ts || echo "ERROR: headplane-hash-password.ts deleted"
+   test -f cmd/headplane-reset-local-admin-password.ts || echo "ERROR: headplane-reset-local-admin-password.ts deleted"
    test -f CODE_GRAPH.md || echo "ERROR: CODE_GRAPH.md deleted"
+   test -f SCHEMA.md || echo "ERROR: SCHEMA.md deleted"
    test -d docs || echo "ERROR: docs/ deleted"
    ```
 
@@ -256,7 +320,12 @@ Implement CI checks to verify critical fork features exist:
   run: |
     test -d app/update-check || exit 1
     test -d app/components/qr-scanner || exit 1
+    test -f app/server/auth/local-admin.ts || exit 1
+    test -f app/server/auth/bcrypt-utils.ts || exit 1
+    test -f cmd/headplane-hash-password.ts || exit 1
+    test -f cmd/headplane-reset-local-admin-password.ts || exit 1
     test -f CODE_GRAPH.md || exit 1
+    test -f SCHEMA.md || exit 1
     test -f docs/MERGE-PRESERVATION.md || exit 1
 ```
 
@@ -345,17 +414,19 @@ Critical documentation can be recovered from:
 - [ ] Create backup branch
 - [ ] Fetch and review upstream changes
 - [ ] Perform merge with conflict resolution
-- [ ] Check for silent deletions of protected directories
+- [ ] Check for silent deletions of protected directories and files
 - [ ] Verify `app/update-check/` exists
 - [ ] Verify `app/components/qr-scanner/` exists
-- [ ] Verify `CODE_GRAPH.md` exists
-- [ ] Verify all navigation routes work
+- [ ] Verify `app/server/auth/local-admin.ts` and `bcrypt-utils.ts` exist
+- [ ] Verify `cmd/headplane-hash-password.ts` and CLI tools exist
+- [ ] Verify `CODE_GRAPH.md` and `SCHEMA.md` exist
+- [ ] Verify all navigation routes work (including `/admin/admin/users`)
 - [ ] Run `pnpm run typecheck`
 - [ ] Run `pnpm run lint`
 - [ ] Run `pnpm run test`
 - [ ] Run `pnpm run test:component`
 - [ ] Run `pnpm run test:integration`
-- [ ] Manual testing of fork-specific features
+- [ ] Manual testing of fork-specific features (password login, update check, QR scan)
 - [ ] Update `CHANGELOG.md` with preserved features list
 - [ ] Update `session.md` with merge details
 - [ ] Commit and push changes
@@ -381,4 +452,4 @@ This document should be reviewed and updated:
 
 ---
 
-**Last Updated:** November 1, 2026
+**Last Updated:** November 2, 2026
