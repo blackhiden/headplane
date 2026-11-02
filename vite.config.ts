@@ -36,6 +36,26 @@ if (!VERSION) {
   throw new Error("Unable to determine version");
 }
 
+// Derive commit hash: HEADPLANE_COMMIT env > git rev-parse --short HEAD > "unknown"
+let COMMIT_HASH: string;
+if (process.env.HEADPLANE_COMMIT) {
+  COMMIT_HASH = process.env.HEADPLANE_COMMIT;
+} else {
+  try {
+    COMMIT_HASH = execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
+  } catch {
+    COMMIT_HASH = "unknown";
+  }
+}
+
+// Derive build time: HEADPLANE_BUILD_TIME env > current time
+let BUILD_TIME: string;
+if (process.env.HEADPLANE_BUILD_TIME) {
+  BUILD_TIME = process.env.HEADPLANE_BUILD_TIME;
+} else {
+  BUILD_TIME = new Date().toISOString();
+}
+
 export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
 
@@ -103,6 +123,8 @@ export default defineConfig(({ command }) => {
     },
     define: {
       __VERSION__: JSON.stringify(isNext ? `${VERSION}-next` : VERSION),
+      __COMMIT_HASH__: JSON.stringify(COMMIT_HASH),
+      __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     },
   };
 });
