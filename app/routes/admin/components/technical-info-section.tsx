@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useHref } from "react-router";
 
 import ServerInfoCard, { formatBytes, formatDeploymentMode } from "~/components/server-info-card";
 
@@ -36,6 +37,7 @@ interface ServerInfoResponse {
 }
 
 export default function TechnicalInfoSection() {
+  const serverInfoUrl = useHref("/api/admin/server-info");
   const [serverInfo, setServerInfo] = useState<ServerInfoResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export default function TechnicalInfoSection() {
   useEffect(() => {
     async function fetchServerInfo() {
       try {
-        const response = await fetch(`${__PREFIX__}/api/admin/server-info`);
+        const response = await fetch(serverInfoUrl);
         if (!response.ok) {
           throw new Error(`Failed to fetch server info: ${response.statusText}`);
         }
@@ -57,7 +59,7 @@ export default function TechnicalInfoSection() {
     }
 
     fetchServerInfo();
-  }, []);
+  }, [serverInfoUrl]);
 
   if (loading) {
     return (
