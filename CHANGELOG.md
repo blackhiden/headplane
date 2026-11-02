@@ -21,10 +21,12 @@
 
 ## Fixes
 
+- Restored Local Administrator username/password authentication on the login page after upstream merge regression, and established automated merge-preservation checks (CLI script, pre-commit hook, CI step, and unit test).
 - Fixed several broken actions when sitting behind a reverse proxy that terminates TLS.
 - Fixed the **Add nameserver** dialog state when closing and reopening.
 - Single sign-on no longer fails with "Unexpected Server Error" when `server.base_url` is missing.
 - Browser SSH works with SSH rules that use the `check` action on Headscale 0.29.
+- Resolved URLs dynamically via router base path instead of undefined build-time global `__PREFIX__`, fixing update checks, admin technical information display, and administrative password change sign-out redirections.
 
 # v1.0.13 (October 26, 2026)
 

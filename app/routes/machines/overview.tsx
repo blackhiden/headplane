@@ -57,23 +57,42 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const writablePermission = auth.can(principal, Capabilities.write_machines);
 
-  const { api } = await getRequestApi(request);
-  const [nodesSnap, usersSnap] = await Promise.all([
-    headscaleLiveStore.get(nodesResource, api),
-    headscaleLiveStore.get(usersResource, api),
-  ]);
-  const nodes = nodesSnap.data;
-  const users = usersSnap.data;
+  let nodes;
+  let users;
+  try {
+    const { api } = await getRequestApi(request);
+    const [nodesSnap, usersSnap] = await Promise.all([
+      headscaleLiveStore.get(nodesResource, api),
+      headscaleLiveStore.get(usersResource, api),
+    ]);
+    nodes = nodesSnap.data;
+    users = usersSnap.data;
+  } catch (_error) {
+    throw new Error(
+      "Unable to load machines from Headscale. Please check that Headscale is running and accessible.",
+    );
+  }
 
   const magic = headscaleConfig.getMagicDNSBaseDomain();
 
   const agents = agentsFeature.state === "enabled" ? agentsFeature.value : undefined;
-  const [statsResult, policyResult] = await Promise.allSettled([
-    agents?.lookup(nodes.map((node) => node.nodeKey)),
-    api.policy.get(),
-  ]);
-  const stats = statsResult.status === "fulfilled" ? statsResult.value : undefined;
-  const policy = policyResult.status === "fulfilled" ? policyResult.value.policy : undefined;
+  let stats;
+  let policy;
+
+  try {
+    const { api } = await getRequestApi(request);
+    const [statsResult, policyResult] = await Promise.allSettled([
+      agents?.lookup(nodes.map((node) => node.nodeKey)),
+      api.policy.get(),
+    ]);
+    stats = statsResult.status === "fulfilled" ? statsResult.value : undefined;
+    policy = policyResult.status === "fulfilled" ? policyResult.value.policy : undefined;
+  } catch (_error) {
+    // Agent stats and policy are optional; continue without them if they fail
+    stats = undefined;
+    policy = undefined;
+  }
+
   const populatedNodes = mapNodes(nodes, stats);
   const supportsNodeOwnerChange = !headscale.capabilities.nodeOwnerIsImmutable;
   const supportsDisablingKeyExpiry = headscale.capabilities.keyExpiryCanBeDisabled;

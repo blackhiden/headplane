@@ -1,18 +1,74 @@
 import { redirect } from "react-router";
 
-import { authContext, headscaleContext } from "~/server/context";
+import { authContext, headscaleContext, localAdminContext } from "~/server/context";
 import { headscaleErrorMessage, isDataWithApiError } from "~/server/headscale/api/error-client";
 import log from "~/utils/log";
 
 import type { Route } from "./+types/page";
 
+/**
+ * FORK-SPECIFIC FEATURE: Local Administrator Authentication (action handler)
+ *
+ * Handles both password authentication for local administrators and API key
+ * authentication. See docs/MERGE-PRESERVATION.md Section 3.
+ * DO NOT REMOVE DURING UPSTREAM MERGES.
+ */
 export async function loginAction({ request, context }: Route.LoaderArgs) {
   const auth = context.get(authContext);
   const headscale = context.get(headscaleContext);
+  const localAdmin = context.get(localAdminContext);
 
   const formData = await request.formData();
   const apiKey = formData.has("api_key") ? String(formData.get("api_key")).trim() : undefined;
+  const username = formData.has("username") ? String(formData.get("username")).trim() : undefined;
+  const password = formData.has("password") ? String(formData.get("password")) : undefined;
 
+  // Password login flow - use local admin service if available
+  if (password !== undefined) {
+    if (!username || username.length === 0) {
+      log.warn("auth", "Request made with empty username");
+      return {
+        success: false,
+        message: "Username cannot be empty. Please enter a valid username.",
+      };
+    }
+
+    if (password.length === 0) {
+      log.warn("auth", "Request made with empty password");
+      return {
+        success: false,
+        message: "Password cannot be empty. Please enter a valid password.",
+      };
+    }
+
+    // Use local admin authentication if configured
+    if (localAdmin?.state === "enabled") {
+      const result = await localAdmin.value.authenticate(username, password);
+      if (!result.success) {
+        log.warn("auth", "Local admin authentication failed for user: %s", username);
+        return {
+          success: false,
+          message: result.error || "Invalid username or password",
+        };
+      }
+
+      // Create a password session with configured service API key
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      return redirect("/machines", {
+        headers: {
+          "Set-Cookie": await auth.createPasswordSession("local-admin-token", username, maxAge),
+        },
+      });
+    }
+
+    // Local admin mode not configured
+    return {
+      success: false,
+      message: "Password authentication is not available",
+    };
+  }
+
+  // API key login flow
   if (apiKey === undefined) {
     log.warn("auth", "Request made without API key");
     log.warn(

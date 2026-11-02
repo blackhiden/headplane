@@ -12,3 +12,5 @@ pre-commit:
       glob: "*.go"
       run: gofmt -w {staged_files}
       stage_fixed: true
+    check_fork:
+      run: bash scripts/check-fork-features.sh

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useHref } from "react-router";
 
 import type { UpdateCheckResult, UpdateCheckState } from "./types";
 
@@ -101,6 +102,7 @@ export function remindLater(): void {
 async function performCheck(
   headplaneCommit: string,
   headscaleVersion: string,
+  checkEndpoint: string,
 ): Promise<{
   headplaneUpdate: UpdateCheckResult | null;
   headscaleUpdate: UpdateCheckResult | null;
@@ -109,7 +111,7 @@ async function performCheck(
     // Headplane: check via GitHub API directly (browser-side)
     fetchRemoteCommit(headplaneCommit, HEADPLANE_REPO, "Headplane"),
     // Headscale: check via Headplane's backend /api/update-check endpoint
-    fetchHeadscaleUpdate(),
+    fetchHeadscaleUpdate(checkEndpoint),
   ]);
 
   return {
@@ -124,8 +126,8 @@ async function performCheck(
  * Headplane forwards the request server-side, keeping the internal
  * Headscale URL private.
  */
-async function fetchHeadscaleUpdate(): Promise<UpdateCheckResult | null> {
-  const url = `${__PREFIX__}/api/update-check?check=true`;
+async function fetchHeadscaleUpdate(checkEndpoint: string): Promise<UpdateCheckResult | null> {
+  const url = `${checkEndpoint}?check=true`;
 
   try {
     const response = await fetch(url, {
@@ -234,6 +236,7 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
 }
 
 export function UpdateCheckProvider({ children }: { children: React.ReactNode }) {
+  const checkEndpoint = useHref("/api/update-check");
   const versionInfoRef = useRef<{
     headplaneCommit: string;
     headscaleVersion: string;
@@ -256,56 +259,63 @@ export function UpdateCheckProvider({ children }: { children: React.ReactNode })
     [],
   );
 
-  const checkNow = useCallback(async (trigger: UpdateCheckTrigger = "manual") => {
-    const info = versionInfoRef.current;
-    if (!info) {
-      setState((prev) => ({
-        ...prev,
-        error: "Version info not yet available",
-      }));
-      return;
-    }
-
-    // Auto-checks use cached results if available
-    if (trigger === "auto") {
-      const cached = readCache();
-      if (cached) {
-        setState({
-          isChecking: false,
-          headplaneUpdate: cached.headplaneUpdate,
-          headscaleUpdate: cached.headscaleUpdate,
-          error: null,
-        });
-        setLastTrigger(trigger);
+  const checkNow = useCallback(
+    async (trigger: UpdateCheckTrigger = "manual") => {
+      const info = versionInfoRef.current;
+      if (!info) {
+        setState((prev) => ({
+          ...prev,
+          error: "Version info not yet available",
+        }));
         return;
       }
-    }
 
-    setState((prev) => ({ ...prev, isChecking: true, error: null }));
-    setLastTrigger(trigger);
-
-    try {
-      const results = await performCheck(info.headplaneCommit, info.headscaleVersion);
-
-      // Cache successful results (only for auto-triggered checks)
+      // Auto-checks use cached results if available
       if (trigger === "auto") {
-        writeCache(results);
+        const cached = readCache();
+        if (cached) {
+          setState({
+            isChecking: false,
+            headplaneUpdate: cached.headplaneUpdate,
+            headscaleUpdate: cached.headscaleUpdate,
+            error: null,
+          });
+          setLastTrigger(trigger);
+          return;
+        }
       }
 
-      setState({
-        isChecking: false,
-        ...results,
-        error: null,
-      });
-    } catch (err) {
-      setState({
-        isChecking: false,
-        headplaneUpdate: null,
-        headscaleUpdate: null,
-        error: err instanceof Error ? err.message : "Failed to check for updates",
-      });
-    }
-  }, []);
+      setState((prev) => ({ ...prev, isChecking: true, error: null }));
+      setLastTrigger(trigger);
+
+      try {
+        const results = await performCheck(
+          info.headplaneCommit,
+          info.headscaleVersion,
+          checkEndpoint,
+        );
+
+        // Cache successful results (only for auto-triggered checks)
+        if (trigger === "auto") {
+          writeCache(results);
+        }
+
+        setState({
+          isChecking: false,
+          ...results,
+          error: null,
+        });
+      } catch (err) {
+        setState({
+          isChecking: false,
+          headplaneUpdate: null,
+          headscaleUpdate: null,
+          error: err instanceof Error ? err.message : "Failed to check for updates",
+        });
+      }
+    },
+    [checkEndpoint],
+  );
 
   const clearResults = useCallback(() => {
     setState({
