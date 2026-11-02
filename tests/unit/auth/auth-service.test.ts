@@ -249,6 +249,26 @@ describe("session round-trip", () => {
     await expect(auth.require(request)).rejects.toThrow();
   });
 
+  test("resolves valid session when multiple cookies exist in header", async () => {
+    const staleCookie = await auth.createPasswordSession("stale-token", "admin", -1);
+    const validCookie = await auth.createPasswordSession("valid-token", "admin", 86_400_000);
+
+    const stalePart = staleCookie.split(";")[0];
+    const validPart = validCookie.split(";")[0];
+
+    // Browser sends stale cookie first (due to path specificity), valid cookie second
+    const request = new Request("http://localhost/test", {
+      headers: { cookie: `${stalePart}; ${validPart}` },
+    });
+
+    const principal = await auth.require(request);
+    expect(principal.kind).toBe("password");
+    if (principal.kind === "password") {
+      expect(principal.username).toBe("admin");
+      expect(principal.token).toBe("valid-token");
+    }
+  });
+
   test("destroySession expires the cookie immediately", async () => {
     const cookieHeader = await auth.destroySession();
 

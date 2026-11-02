@@ -276,33 +276,48 @@ export function createAuthService(opts: AuthServiceOptions): AuthService {
     return cookie.serialize(`${signed}.${hmac}`);
   }
 
-  async function decodeCookie(request: Request): Promise<CookiePayload> {
+  async function decodeCookies(request: Request): Promise<CookiePayload[]> {
     const cookieHeader = request.headers.get("cookie");
     if (!cookieHeader) {
-      throw new Error("No session cookie found");
+      return [];
     }
 
     const cookie = createCookie(opts.cookie.name, opts.cookie);
+    const rawMatches = [
+      ...cookieHeader.matchAll(new RegExp(`(?:^|;\\s*)${opts.cookie.name}=([^;]*)`, "g")),
+    ]
+      .map((m) => m[1])
+      .filter(Boolean);
 
-    const raw = (await cookie.parse(cookieHeader)) as string | null;
-    if (!raw) {
-      throw new Error("Session cookie is empty");
+    if (rawMatches.length === 0) {
+      return [];
     }
 
-    const dotIndex = raw.lastIndexOf(".");
-    if (dotIndex === -1) {
-      throw new Error("Malformed session cookie");
+    const payloads: CookiePayload[] = [];
+    for (const rawMatch of rawMatches) {
+      try {
+        const raw = (await cookie.parse(`${opts.cookie.name}=${rawMatch}`)) as string | null;
+        if (!raw) continue;
+
+        const dotIndex = raw.lastIndexOf(".");
+        if (dotIndex === -1) continue;
+
+        const signed = raw.slice(0, dotIndex);
+        const hmac = raw.slice(dotIndex + 1);
+        const expected = createHmac("sha256", opts.secret).update(signed).digest("base64url");
+
+        if (hmac !== expected) continue;
+
+        const payload = JSON.parse(
+          Buffer.from(signed, "base64url").toString("utf-8"),
+        ) as CookiePayload;
+        payloads.push(payload);
+      } catch {
+        // Skip invalid cookies
+      }
     }
 
-    const signed = raw.slice(0, dotIndex);
-    const hmac = raw.slice(dotIndex + 1);
-    const expected = createHmac("sha256", opts.secret).update(signed).digest("base64url");
-
-    if (hmac !== expected) {
-      throw new Error("Invalid session cookie signature");
-    }
-
-    return JSON.parse(Buffer.from(signed, "base64url").toString("utf-8")) as CookiePayload;
+    return payloads;
   }
 
   function hashApiKey(key: string): string {
@@ -442,22 +457,42 @@ export function createAuthService(opts: AuthServiceOptions): AuthService {
       return proxyPrincipal;
     }
 
-    const payload = await decodeCookie(request);
+    const payloads = await decodeCookies(request);
+    if (payloads.length === 0) {
+      const cookieHeader = request.headers.get("cookie");
+      if (!cookieHeader) {
+        throw new Error("No session cookie found");
+      }
+      throw new Error("Session cookie is empty");
+    }
 
-    const [session] = await opts.db
-      .select()
-      .from(authSessions)
-      .where(eq(authSessions.id, payload.sid))
-      .limit(1);
+    let activeSession: typeof authSessions.$inferSelect | undefined;
+    let activePayload: CookiePayload | undefined;
 
-    if (!session) {
+    for (const payload of payloads) {
+      const [session] = await opts.db
+        .select()
+        .from(authSessions)
+        .where(eq(authSessions.id, payload.sid))
+        .limit(1);
+
+      if (session) {
+        if (session.expires_at < new Date()) {
+          await opts.db.delete(authSessions).where(eq(authSessions.id, session.id));
+          continue;
+        }
+        activeSession = session;
+        activePayload = payload;
+        break;
+      }
+    }
+
+    if (!activeSession || !activePayload) {
       throw new Error("Session not found");
     }
 
-    if (session.expires_at < new Date()) {
-      await opts.db.delete(authSessions).where(eq(authSessions.id, session.id));
-      throw new Error("Session expired");
-    }
+    const session = activeSession;
+    const payload = activePayload;
 
     if (session.kind === "api_key") {
       if (!payload.api_key) {
@@ -618,8 +653,10 @@ export function createAuthService(opts: AuthServiceOptions): AuthService {
   async function destroySession(request?: Request): Promise<string> {
     if (request) {
       try {
-        const payload = await decodeCookie(request);
-        await opts.db.delete(authSessions).where(eq(authSessions.id, payload.sid));
+        const payloads = await decodeCookies(request);
+        for (const payload of payloads) {
+          await opts.db.delete(authSessions).where(eq(authSessions.id, payload.sid));
+        }
       } catch {
         // Cookie already invalid, just clear it
       }

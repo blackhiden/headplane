@@ -44,6 +44,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Check fork features
+        run: bash scripts/check-fork-features.sh
+
       - name: Build
         run: ./build.sh --skip-pnpm-prune
 

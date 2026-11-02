@@ -76,13 +76,28 @@ function logLoginOidcError(context: string, error: OidcError): void {
   }
 }
 
+/**
+ * FORK-SPECIFIC FEATURE: Local Administrator Authentication (login page)
+ *
+ * Supports username/password login alongside API key login and OIDC SSO.
+ * Defaults to password login when local administrator is configured.
+ * See docs/MERGE-PRESERVATION.md Section 3.
+ * DO NOT REMOVE DURING UPSTREAM MERGES.
+ */
 export default function Page({ loaderData, actionData }: Route.ComponentProps) {
   const { isCookieSecureEnabled, isOidcConnectorEnabled, oidcErrorCodes, urlState } = loaderData;
 
   const [showCookieWarning, setShowCookieWarning] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"api_key" | "password">("password");
+  const [showPassword, setShowPassword] = useState(false);
   const [params] = useSearchParams();
   const { pause, resume } = useLiveData();
   const navigation = useNavigation();
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // There's no session to stream live data with until sign-in finishes.
   useEffect(() => {
@@ -143,7 +158,7 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
             className="w-full"
             nativeButton={false}
             render={<RouterLink prefetch="none" reloadDocument to="/oidc/start" />}
-            variant="primary"
+            variant="heavy"
           >
             Continue with SSO
           </Button>
@@ -154,31 +169,89 @@ export default function Page({ loaderData, actionData }: Route.ComponentProps) {
           </div>
         </>
       )}
+
+      {/* Login method toggle */}
+      <div className="mb-4 flex gap-2">
+        <Button
+          type="button"
+          disabled={!isHydrated}
+          variant={loginMethod === "password" ? "heavy" : "light"}
+          onClick={() => setLoginMethod("password")}
+          className="flex-1"
+        >
+          Password
+        </Button>
+        <Button
+          type="button"
+          disabled={!isHydrated}
+          variant={loginMethod === "api_key" ? "heavy" : "light"}
+          onClick={() => setLoginMethod("api_key")}
+          className="flex-1"
+        >
+          API Key
+        </Button>
+      </div>
+
       <Form className="flex flex-col gap-3" method="POST">
-        <Input
-          autoComplete="current-password"
-          errorMessage={actionData?.success === false ? actionData.message : undefined}
-          invalid={actionData?.success === false}
-          label="API key"
-          labelTooltip={
-            <>
-              Create one by running{" "}
-              <Code className="whitespace-nowrap">headscale apikeys create</Code> on your Headscale
-              server.
-            </>
-          }
-          name="api_key"
-          placeholder="hskey-api-…"
-          required
-          type="password"
-        />
+        {loginMethod === "password" ? (
+          <>
+            <Input
+              autoComplete="username"
+              invalid={actionData?.success === false}
+              label="Username"
+              labelHidden
+              name="username"
+              placeholder="Username"
+              required
+              type="text"
+            />
+            <div className="relative">
+              <Input
+                autoComplete="current-password"
+                invalid={actionData?.success === false}
+                label="Password"
+                labelHidden
+                name="password"
+                placeholder="Password"
+                required
+                type={showPassword ? "text" : "password"}
+              />
+              <button
+                type="button"
+                disabled={!isHydrated}
+                onClick={() => setShowPassword((visible) => !visible)}
+                className="text-muted hover:text-fg absolute top-1/2 right-3 -translate-y-1/2 text-sm disabled:pointer-events-none disabled:opacity-50"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <Input
+            autoComplete="current-password"
+            invalid={actionData?.success === false}
+            label="API key"
+            labelTooltip={
+              <>
+                Create one by running{" "}
+                <Code className="whitespace-nowrap">headscale apikeys create</Code> on your
+                Headscale server.
+              </>
+            }
+            name="api_key"
+            placeholder="API Key"
+            required
+            type="password"
+          />
+        )}
+        {actionData?.success === false && <p className="text-bad text-sm">{actionData.message}</p>}
         <Button
           className="w-full"
           pending={navigation.state === "submitting"}
           type="submit"
-          variant={isOidcConnectorEnabled ? "secondary" : "primary"}
+          variant="heavy"
         >
-          Sign in with API key
+          Sign In
         </Button>
       </Form>
     </Shell>

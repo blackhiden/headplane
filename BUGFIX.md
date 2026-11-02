@@ -1230,6 +1230,96 @@ Compatibility: no API, database or configuration-schema change. Only URL constru
 
 ---
 
+### BUG-005: Local Administrator Username/Password Authentication Removed During Upstream Merge
+
+**Status:** Fixed & Verified  
+**Reported:** 2026-11-02  
+**Fixed:** 2026-11-02  
+**Priority:** High  
+**Affected Version:** v1.0.17
+
+#### 2.1 Description
+
+In commit `ca39fea`, Local Administrator Username/Password Authentication (`LocalAdminService`) was documented and protected in `docs/MERGE-PRESERVATION.md` (Section 3). However, during an upstream merge (`6dd699e` / `34059a3`), `app/routes/auth/login/action.ts` and `app/routes/auth/login/page.tsx` were replaced with upstream versions that only support API key and OIDC authentication. This silently removed username/password login from the application.
+
+#### 2.2 Symptoms
+
+- `/admin/login` displayed only the API key input (and SSO if configured); no toggle or input fields for username and password existed.
+- Form submissions with username and password failed with "Enter an API key." because `action.ts` ignored `username` and `password` formData.
+- `tests/unit/auth/password-login-action.test.ts` failed all 6 unit tests with `AssertionError`.
+- Local administrator access without an API key or OIDC provider was blocked.
+
+#### 2.3 Expected Behavior
+
+1. When navigating to `/admin/login`, the login method defaults to "Password".
+2. The user sees a toggle between "Password" and "API Key".
+3. In password mode, "Username" and "Password" fields are displayed with a "Show"/"Hide" visibility toggle.
+4. Submitting valid local admin credentials creates a session via `auth.createPasswordSession("local-admin-token", username, maxAge)` and redirects to `/machines`.
+5. Login controls remain disabled until client hydration completes.
+6. When merging upstream changes in the future, automated checks prevent silent removal of the feature.
+
+#### 2.4 Actual Behavior
+
+- `/admin/login` showed only API key input.
+- Submissions containing username/password returned "Enter an API key."
+- Upstream merge checklist only verified existence of `app/server/auth/local-admin.ts` (which existed), failing to detect that the route-level integration was erased.
+
+#### 2.5 Reproduction Steps
+
+1. Run `pnpm test:unit tests/unit/auth/password-login-action.test.ts`.
+2. Observe all 6 tests fail with "Enter an API key." instead of processing password authentication.
+3. Inspect `app/routes/auth/login/action.ts` and `app/routes/auth/login/page.tsx`; note lack of `localAdminContext` and password UI.
+
+#### 2.6 Evidence and Investigation Findings
+
+1. `app/server/auth/local-admin.ts`, `bcrypt-utils.ts`, and CLI tools in `cmd/` were intact on disk.
+2. `app/routes/auth/login/action.ts` dropped `localAdminContext` and all password validation logic during `6dd699e`.
+3. `app/routes/auth/login/page.tsx` dropped `loginMethod` state, the Password/API Key toggle, and password input fields.
+4. Merge preservation checks in `docs/MERGE-PRESERVATION.md` only checked for file existence (`test -f app/server/auth/local-admin.ts`), which passed despite the route handlers being overwritten.
+
+#### 2.7 Affected Components
+
+- `app/routes/auth/login/action.ts`: Missing password authentication branch and session creation.
+- `app/routes/auth/login/page.tsx`: Missing password login tab, form fields, and hydration guards.
+- `scripts/check-fork-features.sh`: Missing automated check for shared file integrations.
+- `docs/MERGE-PRESERVATION.md`: Outdated checklist and restoration commands.
+
+#### 2.8 Root Cause Analysis
+
+- **Root Cause ID:** RC-005
+- **Description:** Upstream merge replaced route handler files `app/routes/auth/login/action.ts` and `app/routes/auth/login/page.tsx` with upstream code that only supports API key and OIDC authentication. Because the fork-specific authentication logic lived in shared files rather than isolated modules, standard merge conflict resolution accidentally accepted upstream's version.
+- **Confidence:** Confirmed (100% reproducible via git history and test suite).
+
+#### 2.9 Implemented Fix
+
+1. **Restored Route Handlers:**
+   - `app/routes/auth/login/action.ts`: Added password handling branch using `localAdminContext`, verifying credentials against `LocalAdminService`, rate limiting, and issuing password session cookies via `auth.createPasswordSession("local-admin-token", username, maxAge)`.
+   - `app/routes/auth/login/page.tsx`: Restored `loginMethod` state defaulting to `"password"`, Password/API Key toggle buttons, Username and Password inputs, Show/Hide password toggle, and disabled state prior to hydration.
+2. **Cookie Path Scoping and Multi-Cookie Collision Handling:**
+   - `app/server/context.ts`: Added `path: config.server.base_path` to `cookie` options and `basePath: config.server.base_path` to `createOidcService`. This fixed TS2741 and ensured all authentication cookies are scoped to `config.server.base_path` (e.g. `/admin`) instead of default `/`.
+   - `app/server/web/auth.ts`: Upgraded `decodeCookies` and `resolve` to extract and validate all candidate session cookies when multiple `_hp_auth` cookies are sent (e.g., when a client holds both `/admin` and `/` cookies from a path migration). The active, valid session in SQLite is selected rather than blindly failing on the first stale cookie.
+   - `tests/unit/auth/auth-service.test.ts`: Added unit test `resolves valid session when multiple cookies exist in header`.
+3. **Permanent Multi-Layer Merge Preservation System:**
+   - `scripts/check-fork-features.sh`: Automated bash script verifying 17 points across directories, standalone files, shared file contents, and build defines.
+   - `package.json`: Exposed `"check:fork": "bash scripts/check-fork-features.sh"`.
+   - `lefthook.yml`: Added `check_fork` pre-commit hook to block commits if any fork feature is stripped.
+   - `.github/workflows/build.yaml`: Added CI verification step before build.
+   - `tests/unit/auth/merge-preservation.test.ts`: Added Vitest unit test asserting that all local admin files and integration points are present.
+   - `docs/MERGE-PRESERVATION.md`: Updated Section 3, checklist, restoration procedures, and historical incident log.
+
+#### 2.10 Testing and Verification
+
+- ✅ `pnpm run check:fork`: 17/17 checks passed.
+- ✅ `tests/unit/auth/password-login-action.test.ts`: 6/6 tests passed.
+- ✅ `tests/unit/auth/merge-preservation.test.ts`: 5/5 tests passed.
+- ✅ `tests/unit/auth/auth-service.test.ts`: 38/38 tests passed (including multi-cookie header resolution).
+- ✅ `tests/unit/auth/local-admin.test.ts`: 7/7 tests passed.
+- ✅ `tests/unit/auth/bcrypt-utils.test.ts`: 10/10 tests passed.
+- ✅ `tests/unit/auth/session-invalidation.test.ts`: 4/4 tests passed.
+- ✅ `pnpm run build`: built clean in 3.09s.
+
+---
+
 ## 3. Open Investigations
 
 | ID      | Subject                                                                                                                                                                                                                                                                                                                                                     | Status                     | Blocking / needed input                                                          |

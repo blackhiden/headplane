@@ -13,6 +13,7 @@
     "dev": "pnpm run --stream /^dev:/",
     "start": "node build/server/index.js",
     "typecheck": "react-router typegen && tsc",
+    "check:fork": "bash scripts/check-fork-features.sh",
     "test:unit": "vitest run --project unit",
     "test:component": "vitest run --project component",
     "test:integration": "vitest run --project integration:*",

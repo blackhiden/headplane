@@ -101,11 +101,24 @@ Enables administrative authentication using a username and password instead of r
 - **Protection:**
   - Explicit file and context preservation across all upstream merges.
   - Comprehensive unit and integration test coverage verifying authentication, session lifecycle, and CLI utilities.
-- **CI Check:**
-  - Verify `app/server/auth/local-admin.ts` exists
-  - Verify `app/server/auth/bcrypt-utils.ts` exists
-  - Verify `cmd/headplane-hash-password.ts` exists
-  - Verify `cmd/headplane-reset-local-admin-password.ts` exists
+- **CI & Pre-Commit Check:**
+  - Automated check script: `scripts/check-fork-features.sh` (or `pnpm run check:fork`).
+  - Unit test: `tests/unit/auth/merge-preservation.test.ts` (runs in `pnpm test:unit`).
+  - Pre-commit hook: Configured in `lefthook.yml` under `check_fork`.
+  - CI Workflow: Runs `scripts/check-fork-features.sh` in `.github/workflows/build.yaml`.
+  - Verifies existence of:
+    - `app/server/auth/local-admin.ts`
+    - `app/server/auth/bcrypt-utils.ts`
+    - `cmd/headplane-hash-password.ts`
+    - `cmd/headplane-reset-local-admin-password.ts`
+    - `cmd/headplane-migrate-local-admin.ts`
+    - `app/routes/admin/admin/users/route.tsx`
+  - Verifies presence of password authentication in shared files:
+    - `app/routes/auth/login/action.ts` (`localAdminContext`, `createPasswordSession`)
+    - `app/routes/auth/login/page.tsx` (`loginMethod`, `name="password"`, `isHydrated`)
+    - `app/server/context.ts` (`localAdminContext`, `buildLocalAdmin`)
+    - `app/server/db/schema.ts` (`authSessions` with `'password'`)
+    - `app/server/web/auth.ts` (`createPasswordSession`, `invalidatePasswordSessions`)
 - **Restoration:**
   If accidentally removed or overwritten during an upstream merge:
   ```bash
@@ -115,9 +128,11 @@ Enables administrative authentication using a username and password instead of r
     cmd/headplane-hash-password.ts \
     cmd/headplane-reset-local-admin-password.ts \
     cmd/headplane-migrate-local-admin.ts \
-    app/routes/admin/admin/users/route.tsx
+    app/routes/admin/admin/users/route.tsx \
+    app/routes/auth/login/action.ts \
+    app/routes/auth/login/page.tsx
   ```
-  And re-verify integration in `app/server/context.ts`, `app/server/web/auth.ts`, and `app/routes/auth/login/action.ts`.
+  And re-verify integration in `app/server/context.ts` and `app/server/web/auth.ts`. Run `pnpm run check:fork` to validate.
 
 See `docs/configuration/index.md#local-administrator-profile` for complete documentation.
 
@@ -217,20 +232,16 @@ Fork-specific Headplane Agent improvements:
    - For shared files: **manually merge, preserving fork features**
    - For deleted files: **restore if they contain fork features**
 
-3. **Check for silent deletions**:
+3. **Check for silent deletions and integration integrity**:
 
    ```bash
-   # Verify critical directories and files exist
-   test -d app/update-check || echo "ERROR: update-check deleted"
-   test -d app/components/qr-scanner || echo "ERROR: qr-scanner deleted"
-   test -f app/server/auth/local-admin.ts || echo "ERROR: local-admin.ts deleted"
-   test -f app/server/auth/bcrypt-utils.ts || echo "ERROR: bcrypt-utils.ts deleted"
-   test -f cmd/headplane-hash-password.ts || echo "ERROR: headplane-hash-password.ts deleted"
-   test -f cmd/headplane-reset-local-admin-password.ts || echo "ERROR: headplane-reset-local-admin-password.ts deleted"
-   test -f CODE_GRAPH.md || echo "ERROR: CODE_GRAPH.md deleted"
-   test -f SCHEMA.md || echo "ERROR: SCHEMA.md deleted"
-   test -d docs || echo "ERROR: docs/ deleted"
+   # Run automated fork preservation check
+   pnpm run check:fork
    ```
+
+   The automated script verifies all protected directories, standalone files, and
+   critical integration points in shared files (`action.ts`, `page.tsx`, `context.ts`,
+   `schema.ts`, `auth.ts`, `vite.config.ts`).
 
 4. **Verify protected features**:
    - Check that all navigation routes still exist
@@ -310,26 +321,44 @@ app/update-check/
 └── UpdateCheckModal.tsx
 ```
 
-### CI Checks
+### CI and Pre-Commit Checks
 
-Implement CI checks to verify critical fork features exist:
+Automated checks verify critical fork features and shared file integration points before every commit and in CI:
 
-```yaml
-# .github/workflows/check-fork-features.yml
-- name: Verify fork-specific features
-  run: |
-    test -d app/update-check || exit 1
-    test -d app/components/qr-scanner || exit 1
-    test -f app/server/auth/local-admin.ts || exit 1
-    test -f app/server/auth/bcrypt-utils.ts || exit 1
-    test -f cmd/headplane-hash-password.ts || exit 1
-    test -f cmd/headplane-reset-local-admin-password.ts || exit 1
-    test -f CODE_GRAPH.md || exit 1
-    test -f SCHEMA.md || exit 1
-    test -f docs/MERGE-PRESERVATION.md || exit 1
+```bash
+# Run automated fork preservation check
+pnpm run check:fork
+# or directly:
+bash scripts/check-fork-features.sh
 ```
 
+In `.github/workflows/build.yaml`:
+
+```yaml
+- name: Check fork features
+  run: bash scripts/check-fork-features.sh
+```
+
+In `lefthook.yml` (pre-commit hook):
+
+```yaml
+pre-commit:
+  commands:
+    check_fork:
+      run: bash scripts/check-fork-features.sh
+```
+
+And in Vitest unit test suite (`pnpm test:unit`):
+`tests/unit/auth/merge-preservation.test.ts` asserts that all standalone fork files and integration points in `action.ts`, `page.tsx`, `context.ts`, `schema.ts`, and `auth.ts` are intact.
+
 ## Historical Merge Record
+
+### 1.0.17 (November 2, 2026)
+
+- **Upstream commit:** 6dd699e / 34059a3
+- **Incident:** During upstream 1.0.17 merge, `app/routes/auth/login/action.ts` and `app/routes/auth/login/page.tsx` were replaced with upstream versions, dropping username/password authentication logic and login UI toggle.
+- **Resolution:** Restored password authentication in `action.ts` and login UI in `page.tsx`. Added `scripts/check-fork-features.sh` (`pnpm run check:fork`), automated pre-commit hook in `lefthook.yml`, CI verification step in `.github/workflows/build.yaml`, and Vitest unit test `tests/unit/auth/merge-preservation.test.ts` to ensure the feature cannot be removed in future merges.
+- **Status:** ✅ All features restored and protected with multi-layer guards
 
 ### v1.0.10 (October 19, 2026)
 
@@ -414,11 +443,12 @@ Critical documentation can be recovered from:
 - [ ] Create backup branch
 - [ ] Fetch and review upstream changes
 - [ ] Perform merge with conflict resolution
-- [ ] Check for silent deletions of protected directories and files
+- [ ] Run `pnpm run check:fork` to verify all fork features & integrations exist
 - [ ] Verify `app/update-check/` exists
 - [ ] Verify `app/components/qr-scanner/` exists
 - [ ] Verify `app/server/auth/local-admin.ts` and `bcrypt-utils.ts` exist
 - [ ] Verify `cmd/headplane-hash-password.ts` and CLI tools exist
+- [ ] Verify `app/routes/auth/login/action.ts` and `page.tsx` have password login
 - [ ] Verify `CODE_GRAPH.md` and `SCHEMA.md` exist
 - [ ] Verify all navigation routes work (including `/admin/admin/users`)
 - [ ] Run `pnpm run typecheck`
