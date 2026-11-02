@@ -1,6 +1,6 @@
 import { Eye, EyeOff, Save, User } from "lucide-react";
 import { useState, useEffect } from "react";
-import { data, Form, useActionData } from "react-router";
+import { data, Form, useActionData, useHref } from "react-router";
 
 import Button from "~/components/button";
 import Card from "~/components/card";
@@ -245,6 +245,7 @@ function configUpdateError(error: unknown): string {
 
 export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentProps) {
   const actionData = useActionData<typeof action>();
+  const logoutUrl = useHref("/login?s=logout");
 
   const [username, setUsername] = useState(loaderData.profile.username);
   const [name, setName] = useState(loaderData.profile.name);
@@ -275,7 +276,7 @@ export default function AdminUsersProfileRoute({ loaderData }: Route.ComponentPr
         }
         if ("requiresLogout" in actionData && actionData.requiresLogout) {
           setTimeout(() => {
-            window.location.href = `${__PREFIX__}/login?s=logout`;
+            window.location.href = logoutUrl;
           }, 2000);
         }
       } else if ("error" in actionData && actionData.error) {
