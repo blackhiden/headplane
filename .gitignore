@@ -33,6 +33,8 @@ session.md
 !/SPECIFICATION.md
 !/AGENT_INSTRUCTIONS.md
 !/INITIAL_PROMPT.md
+!/SCHEMA.md
+
 !/docs/development/parallel-worktrees.md
 merge-worktrees.sh
 docs/.vitepress/dist/
