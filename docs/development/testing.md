@@ -21,6 +21,13 @@ Unit tests live in `tests/unit/` and follow the patterns in
 [Architecture](./architecture#testing): create a fresh service instance per
 test with the exact config you need — no mocking frameworks required.
 
+## Merge preservation checks
+
+`pnpm run check:fork` verifies fork-owned files, shared-file integration points,
+build defines, and the marker contract in
+[`docs/MERGE-PRESERVATION.md`](../MERGE-PRESERVATION.md). It runs in pre-commit
+and CI so an upstream merge cannot silently remove a protected feature.
+
 ## Integration tests
 
 API flows against real Headscale containers (via `testcontainers`) live in

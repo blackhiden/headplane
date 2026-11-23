@@ -1,4 +1,14 @@
+<!--
+FORK-OWNED FILE: docs/MERGE-PRESERVATION.md
+
+This file is not upstream documentation. During an upstream merge, keep every
+line between the document start and end markers, including all feature blocks.
+Never accept an upstream version that deletes or rewrites this file.
+-->
+
 # Merge Preservation
+
+<!-- HEADPLANE-FORK-DOC:START -->
 
 This document describes how Headplane preserves fork-specific features when merging
 changes from upstream Headscale.
@@ -12,6 +22,21 @@ not be lost during these merges.
 
 **Key principle:** Every upstream merge must explicitly preserve all fork-specific
 features, components, and documentation.
+
+## Document Contract
+
+This file is fork-owned. The document start/end markers define the region that
+must survive every upstream merge. Inside it, each protected feature has its own
+start/end marker pair with a stable feature id. The merge guard
+(`pnpm run check:fork`) fails if a marker is missing, duplicated, out of order,
+or if a feature block no longer contains its required path or token.
+
+When resolving an upstream merge:
+
+1. Keep this entire file from the fork side when upstream deletes or rewrites it.
+2. Keep every feature block, even when the surrounding section is rewritten.
+3. Add a new feature block and a matching guard entry when adding a fork feature.
+4. Never move a feature outside the document markers.
 
 ## Why This Matters
 
@@ -27,6 +52,8 @@ features, components, and documentation.
 
 The following features and components are fork-specific and must survive all
 upstream merges:
+
+<!-- HEADPLANE-FORK-FEATURE:START update-check -->
 
 ### 1. Update Check Feature (`app/update-check/`)
 
@@ -44,6 +71,10 @@ and Headscale.
 - **Restoration:** If removed, copy the directory back from the last known good commit
 
 See `app/update-check/README.md` for complete documentation.
+
+<!-- HEADPLANE-FORK-FEATURE:END update-check -->
+
+<!-- HEADPLANE-FORK-FEATURE:START qr-scanner -->
 
 ### 2. QR Scanner Component (`app/components/qr-scanner/`)
 
@@ -64,6 +95,10 @@ user-friendly alternative to manual registration workflows.
 - **Restoration:** If removed, copy the directory back from the last known good commit
 
 See `app/components/qr-scanner/README.md` for complete documentation.
+
+<!-- HEADPLANE-FORK-FEATURE:END qr-scanner -->
+
+<!-- HEADPLANE-FORK-FEATURE:START local-admin -->
 
 ### 3. Local Administrator Authentication (`app/server/auth/local-admin.ts`)
 
@@ -136,6 +171,10 @@ Enables administrative authentication using a username and password instead of r
 
 See `docs/configuration/index.md#local-administrator-profile` for complete documentation.
 
+<!-- HEADPLANE-FORK-FEATURE:END local-admin -->
+
+<!-- HEADPLANE-FORK-FEATURE:START docs -->
+
 ### 4. Documentation
 
 Fork-specific documentation that must be preserved:
@@ -146,6 +185,10 @@ Fork-specific documentation that must be preserved:
 - **`docs/MERGE-PRESERVATION.md`** — This document
 - **`session.md`** — Session continuity and working context
 - **`ROADMAP.md`** — Fork-specific roadmap and feature tracking
+
+<!-- HEADPLANE-FORK-FEATURE:END docs -->
+
+<!-- HEADPLANE-FORK-FEATURE:START navigation -->
 
 ### 5. Navigation and Routes
 
@@ -159,6 +202,10 @@ Additional navigation tabs and routes not present in upstream:
 - `/admin` — Administration panel with API key management
 - `/admin/admin/users` — Local administrator profile and password management
 
+<!-- HEADPLANE-FORK-FEATURE:END navigation -->
+
+<!-- HEADPLANE-FORK-FEATURE:START ui-components -->
+
 ### 6. UI Components
 
 Fork-specific UI components in `app/components/`:
@@ -171,6 +218,10 @@ Fork-specific UI components in `app/components/`:
 
 Note: The `qr-scanner/` component is documented separately above as a critical feature.
 
+<!-- HEADPLANE-FORK-FEATURE:END ui-components -->
+
+<!-- HEADPLANE-FORK-FEATURE:START design-system -->
+
 ### 7. Design System Enhancements
 
 Fork-specific design tokens and theme system:
@@ -181,6 +232,10 @@ Fork-specific design tokens and theme system:
 - Backdrop blur effects on header and footer
 - Sticky header with active pill indicators
 
+<!-- HEADPLANE-FORK-FEATURE:END design-system -->
+
+<!-- HEADPLANE-FORK-FEATURE:START backend -->
+
 ### 8. Backend Features
 
 Fork-specific backend functionality:
@@ -190,6 +245,10 @@ Fork-specific backend functionality:
 - Enhanced authentication and session management (local admin and password sessions)
 - Config file atomic updates with backup
 
+<!-- HEADPLANE-FORK-FEATURE:END backend -->
+
+<!-- HEADPLANE-FORK-FEATURE:START agent -->
+
 ### 9. Agent Enhancements
 
 Fork-specific Headplane Agent improvements:
@@ -197,6 +256,28 @@ Fork-specific Headplane Agent improvements:
 - Fault tolerance and retry logic
 - Enhanced caching and periodic sync model
 - Extended integration tests
+
+<!-- HEADPLANE-FORK-FEATURE:END agent -->
+
+<!-- HEADPLANE-FORK-FEATURE:START build-defines -->
+
+### 10. Build Defines (`vite.config.ts`, `vitest.config.ts`)
+
+**Status:** Critical fork feature — DO NOT REMOVE
+
+The update checker and version reporting depend on build-time globals. Upstream
+syncs repeatedly rewrite the Vite configuration, so these defines must be
+restored in both the app and test configs after every merge.
+
+- **Required defines:** `__COMMIT_HASH__`, `__BUILD_TIME__`
+- **App config:** `vite.config.ts`
+- **Test config:** `vitest.config.ts`
+- **Consumers:** `app/root.tsx`, `app/routes/util/info.ts`, `app/update-check/`
+- **CI Check:** `pnpm run check:fork` verifies both defines in `vite.config.ts`
+- **Restoration:** Re-add the derive blocks and `define` entries from the last
+  known good commit, then run `pnpm run check:fork` and `pnpm run build`.
+
+<!-- HEADPLANE-FORK-FEATURE:END build-defines -->
 
 ## Merge Preservation Strategy
 
@@ -231,6 +312,7 @@ Fork-specific Headplane Agent improvements:
    - For fork-specific files: **always keep the fork version**
    - For shared files: **manually merge, preserving fork features**
    - For deleted files: **restore if they contain fork features**
+   - For this document: **keep every marker-delimited block from the fork side**
 
 3. **Check for silent deletions and integration integrity**:
 
@@ -287,6 +369,14 @@ Fork-specific Headplane Agent improvements:
 
 ## Code-Level Protection
 
+### Document Markers
+
+`docs/MERGE-PRESERVATION.md` is the source of truth for fork-owned state. Its
+document markers protect the whole file, and each feature marker protects one
+feature block. `pnpm run check:fork` verifies the markers, their order, and the
+required path or token inside every block. A merge that removes a block fails
+the check before it can be committed or built in CI.
+
 ### Inline Comments for Critical Features
 
 Add comments to critical fork-specific code that might be vulnerable during merges:
@@ -323,7 +413,7 @@ app/update-check/
 
 ### CI and Pre-Commit Checks
 
-Automated checks verify critical fork features and shared file integration points before every commit and in CI:
+Automated checks verify critical fork features, shared file integration points, and the preservation document's marker contract before every commit and in CI:
 
 ```bash
 # Run automated fork preservation check
@@ -443,7 +533,7 @@ Critical documentation can be recovered from:
 - [ ] Create backup branch
 - [ ] Fetch and review upstream changes
 - [ ] Perform merge with conflict resolution
-- [ ] Run `pnpm run check:fork` to verify all fork features & integrations exist
+- [ ] Run `pnpm run check:fork` to verify all fork features, integrations, and marker blocks exist
 - [ ] Verify `app/update-check/` exists
 - [ ] Verify `app/components/qr-scanner/` exists
 - [ ] Verify `app/server/auth/local-admin.ts` and `bcrypt-utils.ts` exist
@@ -480,6 +570,12 @@ This document should be reviewed and updated:
 - When changing the merge preservation strategy
 - At least once per release cycle
 
+When adding a new fork feature, add its marker block here and to the guard's
+feature list in `scripts/check-fork-features.sh` and
+`tests/unit/auth/merge-preservation.test.ts`.
+
 ---
 
-**Last Updated:** November 2, 2026
+**Last Updated:** November 23, 2026
+
+<!-- HEADPLANE-FORK-DOC:END -->

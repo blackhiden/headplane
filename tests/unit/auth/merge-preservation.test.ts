@@ -31,6 +31,55 @@ describe("Merge Preservation: Local Administrator Authentication", () => {
     }
   });
 
+  it("preserves the merge preservation document contract", () => {
+    const docPath = resolve(rootDir, "docs/MERGE-PRESERVATION.md");
+    const content = readFileSync(docPath, "utf-8");
+
+    const docStart = "HEADPLANE-FORK-DOC:START";
+    const docEnd = "HEADPLANE-FORK-DOC:END";
+    expect(content.split(docStart)).toHaveLength(2);
+    expect(content.split(docEnd)).toHaveLength(2);
+    expect(content.indexOf(docStart)).toBeLessThan(content.indexOf(docEnd));
+
+    const protectedDoc = content.slice(
+      content.indexOf(docStart) + docStart.length,
+      content.indexOf(docEnd),
+    );
+
+    const features = [
+      { id: "update-check", tokens: ["app/update-check/"] },
+      { id: "qr-scanner", tokens: ["app/components/qr-scanner/"] },
+      { id: "local-admin", tokens: ["app/server/auth/local-admin.ts"] },
+      { id: "docs", tokens: ["CODE_GRAPH.md"] },
+      { id: "navigation", tokens: ["/routes"] },
+      { id: "ui-components", tokens: ["empty-state.tsx"] },
+      { id: "design-system", tokens: ["Semantic color tokens"] },
+      { id: "backend", tokens: ["/api/admin/server-info"] },
+      { id: "agent", tokens: ["Fault tolerance and retry logic"] },
+      { id: "build-defines", tokens: ["__COMMIT_HASH__", "__BUILD_TIME__"] },
+    ];
+
+    for (const { id, tokens } of features) {
+      const start = `HEADPLANE-FORK-FEATURE:START ${id}`;
+      const end = `HEADPLANE-FORK-FEATURE:END ${id}`;
+      expect(protectedDoc.split(start), `missing start marker for ${id}`).toHaveLength(2);
+      expect(protectedDoc.split(end), `missing end marker for ${id}`).toHaveLength(2);
+      expect(protectedDoc.indexOf(start)).toBeLessThan(protectedDoc.indexOf(end));
+
+      const block = protectedDoc.slice(
+        protectedDoc.indexOf(start) + start.length,
+        protectedDoc.indexOf(end),
+      );
+      for (const token of tokens) {
+        expect(block, `${id} block is missing ${token}`).toContain(token);
+      }
+    }
+
+    const headings = protectedDoc.match(/^### \d+\. /gm) ?? [];
+    const markers = protectedDoc.match(/HEADPLANE-FORK-FEATURE:START /g) ?? [];
+    expect(markers).toHaveLength(headings.length);
+  });
+
   it("preserves password authentication logic in login action", () => {
     const actionPath = resolve(rootDir, "app/routes/auth/login/action.ts");
     const content = readFileSync(actionPath, "utf-8");

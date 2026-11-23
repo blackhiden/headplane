@@ -1,3 +1,9 @@
+# Next
+
+## Changes
+
+- The merge-preservation guide now uses machine-checkable fork markers, and the existing fork check fails when a protected feature block or its required files are removed during an upstream merge.
+
 # 1.0.17 (November 1, 2026)
 
 ## Upgrading

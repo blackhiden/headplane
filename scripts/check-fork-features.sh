@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # scripts/check-fork-features.sh
 #
-# Verifies that all fork-specific features and their critical integration points
-# are present and have not been removed during an upstream merge.
+# Verifies that all fork-specific features, their critical integration points,
+# and the marker contract in the merge preservation document are present and
+# have not been removed during an upstream merge.
 #
 # Referenced in docs/MERGE-PRESERVATION.md and executed during pre-commit & CI.
 
@@ -98,6 +99,88 @@ if grep -q "__COMMIT_HASH__" "$VITE_CONFIG" && grep -q "__BUILD_TIME__" "$VITE_C
   pass "Vite config contains fork build defines ($VITE_CONFIG)"
 else
   fail "Vite config is missing __COMMIT_HASH__ or __BUILD_TIME__ ($VITE_CONFIG)"
+fi
+
+# 5. Check merge preservation document contract
+PRESERVATION_DOC="docs/MERGE-PRESERVATION.md"
+DOC_START="HEADPLANE-FORK-DOC:START"
+DOC_END="HEADPLANE-FORK-DOC:END"
+
+if [ -f "$PRESERVATION_DOC" ]; then
+  doc_start_count=$(grep -Fc -- "$DOC_START" "$PRESERVATION_DOC" || true)
+  doc_end_count=$(grep -Fc -- "$DOC_END" "$PRESERVATION_DOC" || true)
+  doc_start_line=$(awk -v marker="$DOC_START" 'index($0, marker) { print NR; exit }' "$PRESERVATION_DOC")
+  doc_end_line=$(awk -v marker="$DOC_END" 'index($0, marker) { print NR; exit }' "$PRESERVATION_DOC")
+
+  if [ "$doc_start_count" -eq 1 ] && [ "$doc_end_count" -eq 1 ] && [ -n "$doc_start_line" ] && [ -n "$doc_end_line" ] && [ "$doc_start_line" -lt "$doc_end_line" ]; then
+    pass "Merge preservation document has ordered start/end markers ($PRESERVATION_DOC)"
+
+    protected_doc=$(awk -v start="$DOC_START" -v end="$DOC_END" '
+      index($0, start) { inside = 1; next }
+      index($0, end) { inside = 0 }
+      inside { print }
+    ' "$PRESERVATION_DOC")
+
+    feature_entries=(
+      "update-check|app/update-check/"
+      "qr-scanner|app/components/qr-scanner/"
+      "local-admin|app/server/auth/local-admin.ts"
+      "docs|CODE_GRAPH.md"
+      "navigation|/routes"
+      "ui-components|empty-state.tsx"
+      "design-system|Semantic color tokens"
+      "backend|/api/admin/server-info"
+      "agent|Fault tolerance and retry logic"
+      "build-defines|__COMMIT_HASH__;__BUILD_TIME__"
+    )
+
+    for entry in "${feature_entries[@]}"; do
+      feature_id="${entry%%|*}"
+      feature_tokens="${entry#*|}"
+      start_marker="HEADPLANE-FORK-FEATURE:START $feature_id"
+      end_marker="HEADPLANE-FORK-FEATURE:END $feature_id"
+      start_count=$(printf '%s\n' "$protected_doc" | grep -Fc -- "$start_marker" || true)
+      end_count=$(printf '%s\n' "$protected_doc" | grep -Fc -- "$end_marker" || true)
+      start_line=$(printf '%s\n' "$protected_doc" | awk -v marker="$start_marker" 'index($0, marker) { print NR; exit }')
+      end_line=$(printf '%s\n' "$protected_doc" | awk -v marker="$end_marker" 'index($0, marker) { print NR; exit }')
+      feature_block=$(printf '%s\n' "$protected_doc" | awk -v start="$start_marker" -v end="$end_marker" '
+        index($0, start) { inside = 1; next }
+        index($0, end) { inside = 0 }
+        inside { print }
+      ')
+
+      tokens_ok=1
+      IFS=';' read -ra required_tokens <<< "$feature_tokens"
+      for token in "${required_tokens[@]}"; do
+        if ! printf '%s\n' "$feature_block" | grep -Fq -- "$token"; then
+          tokens_ok=0
+        fi
+      done
+
+      if [ "$start_count" -eq 1 ] && [ "$end_count" -eq 1 ] && [ -n "$start_line" ] && [ -n "$end_line" ] && [ "$start_line" -lt "$end_line" ] && [ -n "$feature_block" ] && [ "$tokens_ok" -eq 1 ]; then
+        pass "Merge preservation feature block is intact: $feature_id"
+      else
+        fail "Merge preservation feature block is missing or incomplete: $feature_id"
+      fi
+    done
+
+    feature_heading_count=$(printf '%s\n' "$protected_doc" | awk '
+      /^## Protected Features and Components/ { in_section = 1; next }
+      /^## / { in_section = 0 }
+      in_section && /^### / { count++ }
+      END { print count + 0 }
+    ')
+    feature_marker_count=$(printf '%s\n' "$protected_doc" | grep -Fc "HEADPLANE-FORK-FEATURE:START " || true)
+    if [ "$feature_heading_count" -eq "$feature_marker_count" ]; then
+      pass "Every protected feature heading has a marker block"
+    else
+      fail "Protected feature headings ($feature_heading_count) do not match marker blocks ($feature_marker_count)"
+    fi
+  else
+    fail "Merge preservation document markers are missing, duplicated, or out of order ($PRESERVATION_DOC)"
+  fi
+else
+  fail "Merge preservation document missing: $PRESERVATION_DOC"
 fi
 
 if [ "$FAILED" -eq 1 ]; then
